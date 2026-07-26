@@ -1,37 +1,37 @@
-# Decisions
+# 설계 결정
 
-## D1 — SQL Server is the primary execution target
+## D1 — SQL Server를 주 실행 대상으로 사용
 
-The application uses SQL Server 2022 and PDO_SQLSRV because its lock hints, duplicate codes, and Classic ASP integration are SQL Server specific. MySQL differences are documented separately and are not presented as tested behavior.
+잠금 힌트, 중복 오류 코드와 Classic ASP 연동이 SQL Server에 종속적이므로 SQL Server 2022와 PDO_SQLSRV를 사용한다. MySQL과의 차이는 별도 문서에 기록하며, 검증된 동작으로 간주하지 않는다.
 
-## D2 — Ledger and snapshot are separate
+## D2 — 이벤트 원장과 현재 상태를 분리
 
-`learning_events` preserves every accepted input while `lecture_progress` is the current read model. This makes late events auditable without allowing them to overwrite newer resume state.
+`learning_events`는 수락한 모든 이벤트를 보존하고 `lecture_progress`는 현재 진행 상태를 제공한다. 늦게 도착한 이벤트를 추적할 수 있으면서도 최신 이어보기 상태를 덮어쓰지 않게 한다.
 
-## D3 — Insert event before snapshot and decide duplicates after rollback
+## D3 — 현재 상태보다 이벤트를 먼저 저장하고 롤백 후 중복 판정
 
-The unique `(source, event_id)` insert is first. On 2601/2627 the transaction rolls back, then a fresh hash lookup distinguishes an idempotent replay from a conflicting payload. This avoids a pre-insert race.
+고유 키 `(source, event_id)`를 가진 이벤트를 먼저 저장한다. 오류 2601/2627이 발생하면 트랜잭션을 롤백한 뒤 해시를 새로 조회해 멱등 재요청과 상충하는 `payload`를 구분한다. 이 방식으로 INSERT 전 중복 조회에서 생길 수 있는 경쟁 조건을 피한다.
 
-## D4 — Authentication normalizes source
+## D4 — 인증 단계에서 `source` 결정
 
-Learner Bearer and player HMAC middleware set source from configuration; clients cannot send it. HMAC covers the original raw body and timestamp. Static credentials are limited to local development.
+학습자 Bearer 인증과 플레이어 HMAC 미들웨어가 설정값으로 `source`를 결정하며 클라이언트는 이를 전송할 수 없다. HMAC 서명은 원본 요청 본문과 타임스탬프를 대상으로 한다. 정적 자격 증명은 로컬 개발에서만 사용한다.
 
-## D5 — Resume, furthest, and completion have different rules
+## D5 — 이어보기, 최대 시청 위치와 완료 시각에 서로 다른 규칙 적용
 
-Resume follows the latest ordered event and can move backward. Furthest is monotonic. Completion is a first completion timestamp, not a progress-state toggle.
+이어보기 위치는 정렬 기준상 최신 이벤트를 따르므로 뒤로 이동할 수도 있다. 최대 시청 위치는 줄어들지 않는다. 완료는 상태를 전환하는 값이 아니라 최초 완료 시각으로 기록한다.
 
-## D6 — Classic ASP stays read-only
+## D6 — Classic ASP는 읽기 전용으로 유지
 
-The Classic ASP adapter uses parameterized ADO BIGINT parameters and an IIS Application connection string. Its source and JSON fixture are contract-tested; no new write coupling is added.
+Classic ASP 어댑터는 매개변수화된 ADO BIGINT 매개변수와 IIS Application 연결 문자열을 사용한다. 소스와 JSON 예제는 계약 테스트로 확인하며 새로운 쓰기 의존성을 추가하지 않는다.
 
-## D7 — Keep application wiring explicit
+## D7 — 애플리케이션 조립을 명시적으로 유지
 
-Slim 4, manual wiring, PDO_SQLSRV, and focused PHP tests are sufficient for this service. An ORM, queue, or DI framework would add complexity without improving the SQL Server transaction boundary.
+이 서비스에는 Slim 4, 수동 객체 조립, PDO_SQLSRV와 기능별 PHP 테스트로 충분하다. ORM, 큐나 DI 프레임워크를 추가해도 SQL Server 트랜잭션 경계가 개선되지 않으며 복잡성만 늘어난다.
 
-## D8 — Lock the snapshot key range
+## D8 — 현재 상태 키 범위를 잠금
 
-`UPDLOCK,HOLDLOCK` on the unique learner/lecture index serializes the missing-row and existing-row cases. It is used after event insert so either ledger and snapshot commit together or both roll back.
+학습자·강의 고유 인덱스에 `UPDLOCK,HOLDLOCK`을 사용해 현재 상태 행의 존재 여부와 관계없이 요청을 직렬화한다. 이벤트를 저장한 뒤 잠금을 적용하므로 이벤트 원장과 현재 상태가 함께 커밋되거나 함께 롤백된다.
 
-## D9 — Test deterministic database behavior, not timing luck
+## D9 — 실행 시점에 의존하지 않는 DB 테스트
 
-Parallel HTTP workers rendezvous on a test-only DB barrier. The deadlock case uses two one-row test tables and reverse updates; no production flag or fixed overlap sleep is used. Every fixture uses a unique run prefix and is removed in `finally` blocks.
+병렬 HTTP 작업자는 테스트 전용 DB 배리어에서 대기한 뒤 동시에 요청을 시작한다. 교착 상태는 한 행을 가진 테스트 테이블 두 개를 역순으로 갱신해 재현하며, 운영용 플래그나 고정 대기 시간에 의존하지 않는다. 모든 테스트 데이터는 실행별 고유 접두사를 사용하고 `finally` 블록에서 제거한다.

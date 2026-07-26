@@ -1,0 +1,293 @@
+openapi: 3.0.3
+info:
+  title: EduSync Learning API
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit
+  description: |
+    Accepts authenticated learning events, maintains SQL Server-backed progress
+    snapshots, and provides guardian-authorized progress reads. An optional
+    read-only Classic ASP adapter supports existing IIS environments. Static
+    local credentials are intended for development only.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Application and SQL Server health probe
+      x-implementation-status: implemented
+      security: []
+      responses:
+        '200':
+          description: PDO_SQLSRV connection and SELECT 1 succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthSuccess'
+        '503':
+          description: SQL Server connection or probe failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthFailure'
+  /api/v1/learning-events:
+    post:
+      operationId: createLearningEvent
+      summary: Receive a web or mobile learning event
+      description: |
+        A local development Bearer token authenticates exactly one configured
+        learner subject and one server-normalized source. `learner_id` must
+        match that subject; clients cannot supply `source`. This is not
+        production user authentication.
+      x-implementation-status: implemented
+      security:
+        - learnerBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningEventInput'
+      responses:
+        '200':
+          description: Event applied or an idempotent semantic duplicate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventWriteResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /api/v1/player-events:
+    post:
+      operationId: receivePlayerEvent
+      summary: Receive a server-to-server player callback
+      description: |
+        The server normalizes `source` from the HMAC publisher; clients cannot supply it. The exact HMAC-SHA256 canonical byte input is `X-Player-Timestamp + "\n" + raw HTTP request body`, where the timestamp is its original ASCII decimal header value and the body is not parsed, reserialized, or whitespace-normalized before signing. Send `X-Player-Signature: sha256=<64 lowercase hexadecimal HMAC digest>` and a Unix-seconds timestamp with no leading zero (except `0`); its absolute skew must not exceed `HMAC_TOLERANCE_SECONDS` (300 by default).
+      x-implementation-status: implemented
+      security:
+        - playerHmac: []
+      parameters:
+        - $ref: '#/components/parameters/PlayerTimestamp'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LearningEventInput'
+      responses:
+        '200':
+          description: Event applied or an idempotent semantic duplicate.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventWriteResult'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /api/v1/guardians/{guardianId}/learners/{learnerId}/progress:
+    get:
+      operationId: getGuardianLearnerProgress
+      summary: Read one linked learner's lecture progress
+      description: A local development guardian Bearer token maps to one configured guardian subject. The path `guardianId` must match that subject and an existing `guardian_links` row must link it to `learnerId`.
+      x-implementation-status: implemented
+      security:
+        - guardianBearer: []
+      parameters:
+        - $ref: '#/components/parameters/GuardianId'
+        - $ref: '#/components/parameters/LearnerId'
+      responses:
+        '200':
+          description: Progress rows for the linked learner.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuardianProgressResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /progress.asp:
+    get:
+      operationId: getClassicAspProgress
+      summary: Read progress through the Classic ASP adapter
+      description: Optional Windows IIS endpoint backed by a read-only SQL Server login.
+      x-implementation-status: implemented
+      servers:
+        - url: http://127.0.0.1:8091
+      security: []
+      parameters:
+        - name: learner_id
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+        - name: lecture_id
+          in: query
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Progress returned by the read-only Classic ASP adapter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClassicAspProgress'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '500': { $ref: '#/components/responses/InternalError' }
+  /docs:
+    get:
+      operationId: getDocumentation
+      summary: Serve interactive OpenAPI documentation
+      x-implementation-status: implemented
+      security: []
+      responses:
+        '200':
+          description: Interactive API documentation.
+components:
+  securitySchemes:
+    learnerBearer:
+      type: http
+      scheme: bearer
+      description: Static local development token; maps to APP_BEARER_LEARNER_ID.
+    guardianBearer:
+      type: http
+      scheme: bearer
+      description: Static local development token; maps to GUARDIAN_BEARER_ID.
+    playerHmac:
+      type: apiKey
+      in: header
+      name: X-Player-Signature
+      description: '`sha256=<64 lowercase hex>` of `X-Player-Timestamp + "\n" + raw HTTP request body` using PLAYER_HMAC_SECRET.'
+  parameters:
+    PlayerTimestamp:
+      name: X-Player-Timestamp
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^(0|[1-9][0-9]{0,15})$'
+      description: Original Unix-seconds value included unchanged in the HMAC canonical input.
+    GuardianId:
+      name: guardianId
+      in: path
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+    LearnerId:
+      name: learnerId
+      in: path
+      required: true
+      schema: { type: integer, format: int64, minimum: 1 }
+  responses:
+    BadRequest:
+      description: Malformed JSON, invalid field type/value, or an unknown field.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unauthorized:
+      description: Required authentication is missing, invalid, or outside its HMAC time tolerance.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Forbidden:
+      description: Authenticated subject mismatch, missing guardian link, or inactive/currently invalid enrollment.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    NotFound:
+      description: Requested learner, guardian, or lecture does not exist.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Conflict:
+      description: The normalized source and event_id already identify a different payload.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    Unprocessable:
+      description: occurred_at is outside the enrollment period or more than five minutes ahead of server received time.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+    InternalError:
+      description: Unexpected server error; implementation details are not exposed.
+      content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
+  schemas:
+    HealthSuccess:
+      type: object
+      required: [status, database, driver, probe]
+      properties:
+        status: { type: string, enum: [ok] }
+        database: { type: string, enum: [connected] }
+        driver: { type: string, enum: [pdo_sqlsrv] }
+        probe: { type: integer, enum: [1] }
+    HealthFailure:
+      type: object
+      required: [status, database]
+      properties:
+        status: { type: string, enum: [error] }
+        database: { type: string, enum: [unavailable] }
+    LearningEventInput:
+      type: object
+      additionalProperties: false
+      required: [event_id, learner_id, lecture_id, session_id, sequence_no, event_type, position_seconds, occurred_at]
+      properties:
+        event_id: { type: string, minLength: 1, maxLength: 100 }
+        learner_id: { type: integer, format: int64, minimum: 1 }
+        lecture_id: { type: integer, format: int64, minimum: 1 }
+        session_id: { type: string, minLength: 1, maxLength: 100 }
+        sequence_no: { type: integer, format: int64, minimum: 0 }
+        event_type: { type: string, enum: [CHECKPOINT, COMPLETED] }
+        position_seconds: { type: integer, minimum: 0, maximum: 2147483647 }
+        occurred_at:
+          type: string
+          format: date-time
+          description: RFC3339 timestamp with explicit Z or +/-HH:MM timezone and at most millisecond precision.
+    EventWriteResult:
+      type: object
+      additionalProperties: false
+      required: [applied, duplicate]
+      properties:
+        applied: { type: boolean }
+        duplicate: { type: boolean }
+    GuardianProgressResponse:
+      type: object
+      additionalProperties: false
+      required: [guardian_id, learner_id, progress]
+      properties:
+        guardian_id: { type: integer, format: int64 }
+        learner_id: { type: integer, format: int64 }
+        progress:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [lecture_id, resume_position_seconds, furthest_position_seconds, last_studied_at, completed_at]
+            properties:
+              lecture_id: { type: integer, format: int64 }
+              resume_position_seconds: { type: integer, minimum: 0 }
+              furthest_position_seconds: { type: integer, minimum: 0 }
+              last_studied_at: { type: string, format: date-time, nullable: true }
+              completed_at: { type: string, format: date-time, nullable: true }
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [status, message, correlation_id]
+          properties:
+            status: { type: integer }
+            message: { type: string }
+            correlation_id: { type: string }
+    ClassicAspProgress:
+      type: object
+      required: [learner_id, lecture_id, resume_position_seconds, furthest_position_seconds, last_studied_at, completed_at]
+      properties:
+        learner_id: { type: integer, format: int64 }
+        lecture_id: { type: integer, format: int64 }
+        resume_position_seconds: { type: integer, minimum: 0 }
+        furthest_position_seconds: { type: integer, minimum: 0 }
+        last_studied_at: { type: string, format: date-time, nullable: true }
+        completed_at: { type: string, format: date-time, nullable: true }

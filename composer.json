@@ -1,0 +1,23 @@
+{
+  "name": "hannip0461/edusync-learning-api",
+  "description": "Learning event ingestion and progress tracking API for SQL Server",
+  "license": "MIT",
+  "type": "project",
+  "require": {
+    "ext-pdo_sqlsrv": "*",
+    "php": "^8.3",
+    "slim/slim": "^4.14",
+    "slim/psr7": "^1.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "EduSync\\": "src/"
+    }
+  },
+  "scripts": {
+    "test": "php tests/contract.php && php tests/integration.php && php tests/concurrency.php"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

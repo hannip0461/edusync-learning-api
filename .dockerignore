@@ -1,0 +1,5 @@
+.env
+.git
+.gitignore
+vendor
+README.md

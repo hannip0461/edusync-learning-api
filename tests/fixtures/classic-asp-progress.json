@@ -1,0 +1,14 @@
+{
+  "request": {
+    "learner_id": 2001,
+    "lecture_id": 4001
+  },
+  "response": {
+    "learner_id": 2001,
+    "lecture_id": 4001,
+    "resume_position_seconds": 120,
+    "furthest_position_seconds": 180,
+    "last_studied_at": "2026-07-01T10:00:00.000Z",
+    "completed_at": null
+  }
+}

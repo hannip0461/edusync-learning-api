@@ -1,0 +1,55 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -Q \"SELECT 1\" > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  migrate:
+    build:
+      context: .
+    command: ["php", "scripts/migrate.php"]
+    environment: &database-environment
+      DB_HOST: db
+      DB_PORT: "1433"
+      DB_DATABASE: ${DB_DATABASE:-edusync}
+      DB_USERNAME: sa
+      DB_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env}
+      DB_ENCRYPT: ${DB_ENCRYPT:-true}
+      DB_TRUST_SERVER_CERTIFICATE: ${DB_TRUST_SERVER_CERTIFICATE:-true}
+      APP_BEARER_TOKEN: ${APP_BEARER_TOKEN:?Set APP_BEARER_TOKEN in .env}
+      APP_BEARER_LEARNER_ID: ${APP_BEARER_LEARNER_ID:?Set APP_BEARER_LEARNER_ID in .env}
+      APP_EVENT_SOURCE: ${APP_EVENT_SOURCE:?Set APP_EVENT_SOURCE in .env}
+      GUARDIAN_BEARER_TOKEN: ${GUARDIAN_BEARER_TOKEN:?Set GUARDIAN_BEARER_TOKEN in .env}
+      GUARDIAN_BEARER_ID: ${GUARDIAN_BEARER_ID:?Set GUARDIAN_BEARER_ID in .env}
+      PLAYER_HMAC_SECRET: ${PLAYER_HMAC_SECRET:?Set PLAYER_HMAC_SECRET in .env}
+      PLAYER_EVENT_SOURCE: ${PLAYER_EVENT_SOURCE:?Set PLAYER_EVENT_SOURCE in .env}
+      HMAC_TOLERANCE_SECONDS: ${HMAC_TOLERANCE_SECONDS:-300}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+    environment: *database-environment
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:80"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  mssql-data:

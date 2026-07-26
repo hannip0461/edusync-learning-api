@@ -1,0 +1,13 @@
+<SCRIPT LANGUAGE="VBScript" RUNAT="Server">
+Sub Application_OnStart
+    Dim shell, processEnvironment
+    Set shell = Server.CreateObject("WScript.Shell")
+    Set processEnvironment = shell.Environment("PROCESS")
+
+    Application("EduSyncConnectionString") = _
+        processEnvironment("EDUSYNC_LEGACY_CONNECTION_STRING")
+
+    Set processEnvironment = Nothing
+    Set shell = Nothing
+End Sub
+</SCRIPT>

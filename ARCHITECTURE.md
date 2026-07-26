@@ -6,7 +6,7 @@
 - Auth middleware converts local Bearer or player HMAC credentials into one server-owned subject/source context. Payloads never choose `source`.
 - `EventInput` rejects malformed, unknown, or non-canonical input before service logic.
 - `ProgressService` owns target prechecks, retry scope, duplicate decision, and snapshot order.
-- `ProgressRepository` owns parameterized SQL and SQL Server locking. No ORM or container is used.
+- `ProgressRepository` owns parameterized SQL and SQL Server locking. No ORM or DI container is used.
 
 ## Write path
 

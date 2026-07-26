@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="980" viewBox="0 0 1800 980" role="img" aria-label="EduSync Learning API — 학습 이벤트 처리 흐름">
+  <defs>
+    <style type="text/css"><![CDATA[
+
+  text, tspan {
+    font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+
+    ]]></style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#1E3A5F"/>
+    </marker>
+    <marker id="arrow-soft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#94A3B8"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#2563EB"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#B91C1C"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#15803D"/>
+    </marker>
+    <filter id="softShadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2.2" flood-color="#0F172A" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+  <rect width="1800" height="980" fill="#FFFFFF"/>
+
+<text x="56" y="46" text-anchor="start" fill="#1E3A5F" font-size="30" font-weight="700">학습 이벤트 처리 흐름</text>
+<text x="56" y="74" text-anchor="start" fill="#64748B" font-size="14" font-weight="400">인증 · 수강 등록  →  이벤트 우선 등록  →  순서 판정  →  현재 상태 갱신</text>
+<text x="1744" y="46" text-anchor="end" fill="#94A3B8" font-size="13" font-weight="500">EduSync Learning API</text>
+<rect x="40" y="104" width="540" height="820" rx="18" ry="18" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.5"/>
+<text x="68" y="138" text-anchor="start" fill="#1E3A5F" font-size="13" font-weight="700" letter-spacing="0.5">1  ·  AUTH &amp; VALIDATION</text>
+<rect x="620" y="104" width="540" height="820" rx="18" ry="18" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5"/>
+<text x="648" y="138" text-anchor="start" fill="#1E3A5F" font-size="13" font-weight="700" letter-spacing="0.5">2  ·  IDEMPOTENCY</text>
+<rect x="1200" y="104" width="540" height="820" rx="18" ry="18" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/>
+<text x="1228" y="138" text-anchor="start" fill="#1E3A5F" font-size="13" font-weight="700" letter-spacing="0.5">3  ·  SNAPSHOT &amp; COMMIT</text>
+<rect x="120" y="168" width="380" height="52" rx="12" ry="12" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="310" y="200" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">학습 이벤트 수신</text>
+<line x1="310" y1="220" x2="310" y2="272" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 310 272.0 L 415.0 320 L 310 368.0 L 205.0 320 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="310" y="314" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">인증이</text>
+<text x="310" y="334" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">유효한가?</text>
+<rect x="64" y="292" width="100" height="56" rx="10" ry="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="114" y="314" text-anchor="middle" fill="#B91C1C" font-size="16" font-weight="700">401</text>
+<text x="114" y="334" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="400">인증 실패</text>
+<path d="M 205 320 H 164" fill="none" stroke="#B91C1C" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow-red)"/>
+<text x="184" y="308" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="700">NO</text>
+<line x1="310" y1="368" x2="310" y2="412" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="336" y="392" text-anchor="middle" fill="#15803D" font-size="11" font-weight="700">YES</text>
+<rect x="120" y="412" width="380" height="60" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="310" y="436" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">입력 · 대상 검증</text>
+<text x="310" y="456" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">JSON  ·  학습자  ·  강의</text>
+<line x1="310" y1="472" x2="310" y2="528" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 310 528.0 L 420.0 580 L 310 632.0 L 200.0 580 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="310" y="572" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">유효한 수강 등록이</text>
+<text x="310" y="594" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">있는가?</text>
+<rect x="64" y="552" width="100" height="56" rx="10" ry="10" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="114" y="574" text-anchor="middle" fill="#B91C1C" font-size="16" font-weight="700">403</text>
+<text x="114" y="594" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="400">수강 불가</text>
+<path d="M 200 580 H 164" fill="none" stroke="#B91C1C" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow-red)"/>
+<text x="182" y="568" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="700">NO</text>
+<line x1="310" y1="632" x2="310" y2="692" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="336" y="664" text-anchor="middle" fill="#15803D" font-size="11" font-weight="700">YES</text>
+<rect x="140" y="692" width="340" height="54" rx="12" ry="12" fill="#1E3A5F" stroke="#1E3A5F" stroke-width="0"/>
+<text x="310" y="726" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700">BEGIN TRANSACTION</text>
+<rect x="700" y="168" width="380" height="60" rx="12" ry="12" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="890" y="192" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">learning_events INSERT</text>
+<text x="890" y="214" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">(source, event_id) UNIQUE · payload_hash</text>
+<path d="M 480 719 H 600 V 198 H 700" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<line x1="890" y1="228" x2="890" y2="288" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 890 288.0 L 1000.0 340 L 890 392.0 L 780.0 340 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="890" y="332" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">신규</text>
+<text x="890" y="354" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">이벤트인가?</text>
+<path d="M 1000 340 H 1345" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1040" y="324" text-anchor="middle" fill="#15803D" font-size="11" font-weight="700">YES</text>
+<line x1="890" y1="392" x2="890" y2="484" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="916" y="442" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="700">NO</text>
+<path d="M 890 484.0 L 1010.0 540 L 890 596.0 L 770.0 540 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="890" y="528" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">기존 payload와</text>
+<text x="890" y="552" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">동일한가?</text>
+<rect x="680" y="700" width="180" height="72" rx="12" ry="12" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="770" y="728" text-anchor="middle" fill="#15803D" font-size="18" font-weight="700">200</text>
+<text x="770" y="752" text-anchor="middle" fill="#15803D" font-size="12" font-weight="400">중복 · 변경 없음</text>
+<path d="M 770 540 H 730 V 676 H 770 V 700" fill="none" stroke="#15803D" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-green)"/>
+<text x="748" y="528" text-anchor="middle" fill="#15803D" font-size="11" font-weight="700">YES</text>
+<rect x="920" y="700" width="180" height="72" rx="12" ry="12" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="1010" y="728" text-anchor="middle" fill="#B91C1C" font-size="18" font-weight="700">409</text>
+<text x="1010" y="752" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="400">동일 ID · 다른 payload</text>
+<path d="M 1010 540 H 1050 V 676 H 1010 V 700" fill="none" stroke="#B91C1C" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-red)"/>
+<text x="1032" y="528" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="700">NO</text>
+
+<path d="M 1470 284 L 1595 340 L 1470 396 L 1345 340 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="1470" y="328" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">최신 순서의</text>
+<text x="1470" y="352" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">이벤트인가?</text>
+<rect x="1240" y="460" width="200" height="76" rx="12" ry="12" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="1340" y="488" text-anchor="middle" fill="#15803D" font-size="14" font-weight="700">최신 이벤트</text>
+<text x="1340" y="512" text-anchor="middle" fill="#15803D" font-size="11" font-weight="400">이어보기 · last_studied_at</text>
+<rect x="1500" y="460" width="200" height="76" rx="12" ry="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="1600" y="488" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">과거 이벤트</text>
+<text x="1600" y="512" text-anchor="middle" fill="#64748B" font-size="11" font-weight="400">이어보기 위치 유지</text>
+<path d="M 1415 396 L 1340 460" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1370" y="414" text-anchor="middle" fill="#15803D" font-size="11" font-weight="700">YES</text>
+<path d="M 1525 396 L 1600 460" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1570" y="414" text-anchor="middle" fill="#64748B" font-size="11" font-weight="700">NO</text>
+<rect x="1280" y="600" width="380" height="76" rx="12" ry="12" fill="#FFFFFF" stroke="#86EFAC" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="1470" y="628" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">공통 갱신</text>
+<text x="1470" y="654" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">최대 시청 위치 유지  ·  완료 시각은 최초 1회</text>
+<path d="M 1340 536 V 568 H 1400 V 600" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M 1600 536 V 568 H 1540 V 600" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<line x1="1470" y1="676" x2="1470" y2="718" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 1470 718 L 1585 770 L 1470 822 L 1355 770 Z" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.6" filter="url(#softShadow)"/>
+<text x="1470" y="762" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">DB 처리</text>
+<text x="1470" y="784" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="700">성공인가?</text>
+<rect x="1240" y="850" width="180" height="58" rx="12" ry="12" fill="#15803D" stroke="#15803D" stroke-width="0"/>
+<text x="1330" y="886" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700">200  COMMIT</text>
+<rect x="1520" y="850" width="180" height="58" rx="12" ry="12" fill="#B91C1C" stroke="#B91C1C" stroke-width="0"/>
+<text x="1610" y="886" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700">500  ROLLBACK</text>
+<path d="M 1355 770 L 1330 850" fill="none" stroke="#15803D" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow-green)"/>
+<text x="1318" y="810" text-anchor="middle" fill="#15803D" font-size="11" font-weight="700">YES</text>
+<path d="M 1585 770 L 1610 850" fill="none" stroke="#B91C1C" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow-red)"/>
+<text x="1622" y="810" text-anchor="middle" fill="#B91C1C" font-size="11" font-weight="700">NO</text>
+</svg>

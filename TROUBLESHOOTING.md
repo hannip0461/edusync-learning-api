@@ -18,7 +18,7 @@ Compose 파일이나 애플리케이션 오류가 아니라 Windows에서 Docker
 
 - Docker Desktop과 Linux 컨테이너 엔진을 기동했다.
 - `docker compose config --quiet`으로 `.env` 치환과 Compose 문법을 먼저 확인했다.
-- DB 컨테이너의 healthcheck가 통과한 뒤 migrate와 app을 순서대로 기동했다.
+- DB 컨테이너의 상태 검사가 끝난 뒤 마이그레이션과 `app` 컨테이너를 순서대로 실행했다.
 
 ### R — Result
 
@@ -48,9 +48,9 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 
 ### R — Result
 
-- 임시 세션 환경변수 없이 `docker compose config --quiet` PASS
-- seed subject 기준으로 app 재생성 성공
-- DB health, migration, `/health` PASS
+- 임시 세션 환경변수 없이 `docker compose config --quiet` 통과
+- 시드 데이터의 학습자·보호자 기준으로 `app` 컨테이너 재생성
+- DB 상태 검사, 마이그레이션, `/health` 확인 완료
 - 추적 파일의 비밀값 변경 없음
 
 ## 2026-07-26 — 미등록 경로와 잘못된 메서드가 HTTP 500 반환
@@ -59,7 +59,7 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 
 ### P — Problem
 
-실제 HTTP 확인에서 다음 요청이 모두 500으로 처리됐다.
+HTTP 요청에서 다음 경로가 모두 500으로 처리됐다.
 
 - 미등록 경로: 기대 404
 - 등록된 경로의 허용되지 않은 메서드: 기대 405
@@ -79,8 +79,8 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 
 - 미등록 경로: JSON 404
 - 잘못된 메서드: JSON 405와 `Allow` 헤더
-- correlation ID와 공통 `ErrorResponse` 형식 유지
-- 전체 HTTP+MSSQL 통합 테스트 PASS
+- `correlation_id`와 공통 `ErrorResponse` 형식 유지
+- 전체 HTTP+MSSQL 통합 테스트 통과
 
 ## 2026-07-26 — 런타임·OpenAPI·Composer 메타데이터 드리프트
 
@@ -89,8 +89,8 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 ### P — Problem
 
 - `EventInput`은 `position_seconds`를 SQL Server `int` 최댓값인 `2147483647`로 제한했지만 OpenAPI에는 상한이 없었다.
-- Composer 패키지 이름과 설명이 공개 프로젝트 명칭 및 현재 기능과 일치하지 않았고, manifest 변경 뒤 lock content hash도 동기화가 필요했다.
-- OpenAPI lint는 Classic ASP 경로의 4XX 응답 누락도 경고했다.
+- Composer 패키지 이름과 설명이 공개 프로젝트 명칭 및 현재 기능과 일치하지 않았고, `composer.json` 변경 뒤 `composer.lock`의 `content-hash`도 동기화가 필요했다.
+- OpenAPI 린트는 Classic ASP 경로의 4XX 응답 누락도 경고했다.
 
 ### A — Analysis
 
@@ -100,16 +100,16 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 
 - `LearningEventInput.position_seconds`에 `maximum: 2147483647`을 추가했다.
 - Classic ASP 경로에 400, 404, 500 응답 계약을 추가했다.
-- Composer name/description을 공개 프로젝트 명칭에 맞추고 lock content hash를 재생성했다.
+- `composer.json`의 패키지 이름과 설명을 공개 프로젝트 명칭에 맞추고 `composer.lock`의 `content-hash`를 재생성했다.
 - MIT 라이선스 메타데이터와 표준 라이선스 파일을 추가했다.
-- Composer validate와 Redocly lint를 함께 실행했다.
+- Composer 검증과 Redocly 린트를 함께 실행했다.
 
 ### R — Result
 
 - 런타임과 OpenAPI의 `position_seconds` 범위 일치
-- `composer validate --no-check-publish` 경고 없이 PASS
-- `composer check-platform-reqs` PASS
-- Redocly 오류 0, 개발용 localhost와 health/docs의 4XX 응답에 관한 권장 경고 3개만 유지
+- `composer validate --no-check-publish` 경고 없이 통과
+- `composer check-platform-reqs` 통과
+- Redocly 오류 0, 개발용 localhost와 `/health`·`/docs`의 4XX 응답에 관한 권장 경고 3개만 유지
 
 ## 2026-07-26 — 핵심 진행 규칙의 회귀 테스트 공백
 
@@ -119,27 +119,27 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 
 구현과 수동 확인은 정상이었지만 다음 규칙을 HTTP+MSSQL 통합 테스트가 고정하지 못했다.
 
-- 다른 session 간 resume 최신성 순서
+- 서로 다른 `session_id` 간 `resume_position_seconds` 최신성
 - 수강 기간 밖 `occurred_at`의 422
 - 두 번째 `COMPLETED`가 최초 `completed_at`을 바꾸지 않는 규칙
 
 ### A — Analysis
 
-현재 동작이 정상이어도 테스트가 없으면 정렬 조건이나 `CASE` 식 변경으로 회귀가 생겨도 suite가 계속 통과할 수 있었다. 기능 결함이 아니라 회귀 방지 테스트의 공백이었다.
+테스트가 없으면 정렬 조건이나 `CASE` 식이 바뀌어도 회귀를 놓칠 수 있었다. 핵심 규칙을 고정할 통합 테스트가 부족했다.
 
 ### A — Action
 
-- 다른 session의 newer/older 이벤트를 모두 저장하고 resume와 furthest를 각각 검증했다.
+- `session_id`가 다른 최신·과거 이벤트를 모두 저장하고 `resume_position_seconds`와 `furthest_position_seconds`를 각각 검증했다.
 - 수강 시작 전과 종료 후 이벤트의 422를 추가했다.
 - CHECKPOINT 이후에도, 두 번째 COMPLETED 이후에도 최초 `completed_at`이 유지되는지 확인했다.
-- 모든 fixture는 고유 ID를 사용하고 `finally`에서 제거했다.
+- 모든 테스트 데이터는 고유 ID를 사용하고 `finally` 블록에서 제거했다.
 
 ### R — Result
 
-- 다른 session: `(occurred_at, received_at, event_seq)` 순서 회귀 방지
+- 서로 다른 `session_id`: `(occurred_at, received_at, event_seq)` 순서 회귀 방지
 - 수강 기간: 시작 전·종료 후 모두 422
-- completion: 최초 시각 불변
-- fixture 잔존 0, 통합 테스트 PASS
+- `completed_at`: 최초 시각 불변
+- 테스트 데이터 잔존 없음, 통합 테스트 통과
 
 ## 2026-07-26 — 시간 운에 의존하는 동시성 검증
 
@@ -147,55 +147,55 @@ Git에서 제외된 `.env`에 다음 키를 로컬 값으로 설정했다. 값 �
 
 ### P — Problem
 
-순차 요청이나 고정 sleep만으로는 첫 snapshot 경쟁, 중복 event race, 상충 payload, 원자적 rollback과 실제 deadlock retry를 증명할 수 없었다. 테스트가 통과해도 요청이 실제로 겹쳤다는 보장이 없었다.
+순차 요청이나 고정 대기만으로는 최초 `lecture_progress` 생성 경쟁, 중복·상충 이벤트, 원자적 롤백, 실제 교착 상태 재시도를 증명할 수 없었다. 요청이 실제로 겹쳤는지도 보장하기 어려웠다.
 
 ### A — Analysis
 
-동시성 검증은 결과만 맞는 것으로 충분하지 않다. 참여 프로세스가 같은 지점에서 대기한 뒤 동시에 HTTP 요청을 시작해야 하며, deadlock은 실제 반대 순서의 잠금과 rollback 흔적까지 확인해야 한다.
+참여 프로세스가 같은 지점에서 대기한 뒤 동시에 HTTP 요청을 시작하도록 DB 배리어가 필요했다. 교착 상태 역시 반대 순서의 잠금과 롤백 흔적을 확인해야 했다.
 
 ### A — Action
 
-- `proc_open` 기반 별도 HTTP 프로세스와 DB barrier 테이블을 사용했다.
-- T01/T02/T03/T04로 첫 insert, 12개 checkpoint, 동일 payload 중복, 상충 payload를 검증했다.
-- T08은 snapshot trigger 실패로 event와 snapshot이 함께 rollback되는지 확인했다.
-- T12는 left/right 잠금 테이블과 역순 UPDATE로 실제 deadlock을 만들었다.
-- `IDENT_CURRENT = before + 2`로 rollback insert 1회와 retry insert 1회를 증명했다.
-- 고유 run prefix와 `finally` cleanup을 적용했다.
+- `proc_open` 기반 별도 HTTP 프로세스와 DB 배리어 테이블을 사용했다.
+- T01/T02/T03/T04로 최초 생성, 12개 체크포인트, 동일 `payload` 중복, 상충 `payload`를 검증했다.
+- T08은 상태 갱신 트리거 실패 시 이벤트와 현재 상태가 함께 롤백되는지 확인했다.
+- T12는 `left`·`right` 잠금 테이블과 역순 `UPDATE`로 실제 교착 상태를 만들었다.
+- `IDENT_CURRENT = before + 2`로 롤백된 INSERT 한 번과 재시도 INSERT 한 번을 확인했다.
+- 실행별 고유 접두사를 사용하고 `finally` 블록에서 테스트 데이터를 제거했다.
 
 ### R — Result
 
-- T01/T02/T03/T04/T08/T12 모두 PASS
-- 중복 race: applied 1, duplicate 5, event 1
-- 상충 payload race: 200과 409, event 1
-- snapshot 실패: event 0, progress 0
-- deadlock: 최종 200, commit event 1, snapshot 1, rollback/retry identity 증거 확인
-- test-only table/trigger 잔존 0
+- T01/T02/T03/T04/T08/T12 모두 통과
+- 중복 경쟁: `applied` 1, `duplicate` 5, 저장 이벤트 1
+- 상충 `payload` 경쟁: 응답 200·409, 저장 이벤트 1
+- 상태 갱신 실패: 이벤트 0, 진행 상태 0
+- 교착 상태: 최종 200, 커밋된 이벤트·현재 상태 각 1, 롤백·재시도 근거 확인
+- 테스트 전용 테이블·트리거 잔존 없음
 
-## 2026-07-26 — PDO_SQLSRV trigger 결과셋과 예외 전달
+## 2026-07-26 — PDO_SQLSRV 트리거 결과셋과 예외 전달
 
 상태: 해결
 
 ### P — Problem
 
-snapshot INSERT/UPDATE에 연결한 테스트 trigger의 실패나 deadlock이 PDO_SQLSRV의 뒤쪽 결과셋에 남으면 트랜잭션 경계까지 예외가 안정적으로 전달되지 않을 수 있었다. 반대로 모든 문장에 같은 소비 로직을 적용하면 event INSERT의 `OUTPUT INSERTED...` 행까지 잃게 된다.
+`lecture_progress` INSERT/UPDATE에 연결한 테스트 트리거의 실패나 교착 상태가 PDO_SQLSRV의 뒤쪽 결과셋에 남으면 트랜잭션 경계까지 예외가 안정적으로 전달되지 않을 수 있었다. 반대로 모든 문장에 같은 소비 로직을 적용하면 `learning_events` INSERT의 `OUTPUT INSERTED...` 행까지 잃게 된다.
 
 ### A — Analysis
 
-event INSERT는 반환된 `event_seq`와 `received_at`을 읽어야 한다. snapshot DML은 반환 행이 필요 없지만 trigger가 만든 추가 결과셋을 끝까지 진행한 뒤 `errorInfo`를 확인해야 한다. 두 실행 경로의 요구가 달랐다.
+`learning_events` INSERT는 반환된 `event_seq`와 `received_at`을 읽어야 한다. `lecture_progress` DML은 반환 행이 필요 없지만 트리거가 만든 추가 결과셋을 끝까지 진행한 뒤 `errorInfo`를 확인해야 한다. 두 실행 경로의 요구가 달랐다.
 
 ### A — Action
 
-- event INSERT는 `fetch()`로 OUTPUT 행을 읽고 `closeCursor()`를 호출했다.
-- snapshot INSERT/UPDATE에만 `executeAndConsume()`을 적용했다.
+- `learning_events` INSERT는 `fetch()`로 OUTPUT 행을 읽고 `closeCursor()`를 호출했다.
+- `lecture_progress` INSERT/UPDATE에만 `executeAndConsume()`을 적용했다.
 - `nextRowset()`을 끝까지 수행한 뒤 `errorInfo`를 검사해 PDOException을 만들었다.
-- 예외는 `ProgressService`의 rollback 및 1205/3960 재시도 경계로 전달했다.
+- 예외는 `ProgressService`의 롤백 및 1205/3960 재시도 경계로 전달했다.
 
 ### R — Result
 
-- event의 `event_seq`/`received_at` 정상 보존
-- T08 trigger THROW가 HTTP 500과 전체 rollback으로 관찰됨
-- T12 deadlock 1205가 전체 트랜잭션 1회 재시도로 연결됨
-- OUTPUT 행 손실 없이 trigger 오류 전달 검증 PASS
+- 이벤트의 `event_seq`·`received_at` 정상 보존
+- T08 트리거의 `THROW`가 HTTP 500과 전체 롤백으로 관찰됨
+- T12 교착 상태 오류 1205가 전체 트랜잭션 1회 재시도로 연결됨
+- OUTPUT 행 손실 없이 트리거 오류 전달 검증 통과
 
 ## 2026-07-26 — Windows IIS·Classic ASP 실행 전제조건 부재
 
@@ -207,7 +207,7 @@ event INSERT는 반환된 `event_seq`와 `received_at`을 읽어야 한다. snap
 
 ### A — Analysis
 
-소스 계약 테스트는 ASP 문법과 JSON 형태만 확인할 뿐 IIS handler, Windows 계정, ADO provider, SQL 연결을 검증하지 못한다. Windows 선택 기능 활성화와 시스템 드라이버 설치는 관리자 권한이 필요했다.
+소스 계약 테스트는 ASP 문법과 JSON 형태만 확인할 뿐 IIS 핸들러, Windows 계정, ADO 공급자, SQL 연결을 검증하지 못한다. Windows 선택 기능 활성화와 시스템 드라이버 설치는 관리자 권한이 필요했다.
 
 ### A — Action
 
@@ -240,12 +240,12 @@ event INSERT는 반환된 `event_seq`와 `received_at`을 읽어야 한다. snap
 
 - 스크립트의 실행 로그와 예외 문구를 ASCII 영문으로 변경했다.
 - 프로젝트의 UTF-8 no-BOM/LF 형식은 유지했다.
-- PowerShell 5.1 parser로 문법을 별도 확인했다.
+- PowerShell 5.1 파서로 문법을 별도 확인했다.
 
 ### R — Result
 
 - 관리자·비관리자 실행 모두 메시지 손상 없음
-- replacement character 0
+- 대체 문자(U+FFFD) 없음
 - 불필요한 BOM 추가나 전체 파일 인코딩 변환 없음
 
 ## 2026-07-26 — PowerShell 파이프의 BOM이 sqlcmd 입력에 포함됨
@@ -262,14 +262,14 @@ PowerShell 문자열을 `docker compose exec ... sqlcmd`의 표준입력으로 �
 
 ### A — Action
 
-- PowerShell pipeline 대신 `System.Diagnostics.ProcessStartInfo`를 사용했다.
+- PowerShell 파이프라인 대신 `System.Diagnostics.ProcessStartInfo`를 사용했다.
 - `RedirectStandardInput`으로 BOM 없는 표준입력을 Docker/sqlcmd에 전달했다.
-- stdout, stderr, 종료 코드를 분리해 비밀값 없이 결과를 판정했다.
+- `stdout`, `stderr`, 종료 코드를 분리해 비밀값 없이 결과를 판정했다.
 
 ### R — Result
 
-- `SELECT 1` readiness 확인 PASS
-- 최소권한 SQL login/user 생성 PASS
+- `SELECT 1` 준비 상태 확인 완료
+- 최소 권한 SQL 로그인·사용자 생성 완료
 - 비밀번호를 명령행이나 로그에 출력하지 않고 재실행 가능
 
 ## 2026-07-26 — IIS 앱 풀 환경변수 관리 API 호환성
@@ -280,23 +280,23 @@ PowerShell 문자열을 `docker compose exec ... sqlcmd`의 표준입력으로 �
 
 앱 풀 환경변수를 설정하는 과정에서 두 오류가 연속으로 발생했다.
 
-1. `Microsoft.ApplicationHost.WritableAdminManager` COM 객체가 null이어서 `CommitPath` 설정 시 null reference
-2. 새 collection element를 추가할 때 필수 `value`가 없어 구성 저장 거부
+1. `Microsoft.ApplicationHost.WritableAdminManager` COM 객체가 null이어서 `CommitPath` 설정 시 null 참조 오류 발생
+2. 새 컬렉션 요소를 추가할 때 필수 `value`가 없어 구성 저장 거부
 
 ### A — Analysis
 
-COM 관리 객체 생성은 해당 환경에서 안정적이지 않았다. 또한 IIS 구성 컬렉션은 `Add()` 시점에 필수 속성을 즉시 검증하므로 `name`만 지정하고 나중에 `value`를 넣을 수 없었다.
+COM 관리 객체 생성은 해당 환경에서 안정적이지 않았다. IIS 구성 컬렉션은 `Add()` 시점에 필수 속성을 즉시 검증하므로 `name`만 지정하고 나중에 `value`를 넣을 수 없었다.
 
 ### A — Action
 
 - COM 경로를 `Microsoft.Web.Administration.ServerManager` .NET API로 교체했다.
-- 기존 변수는 value만 갱신하고, 새 변수는 name과 value를 모두 설정한 뒤 collection에 추가했다.
-- `CommitChanges()` 이후 앱 풀을 recycle했다.
+- 기존 변수는 `value`만 갱신하고, 새 변수는 `name`과 `value`를 모두 설정한 뒤 컬렉션에 추가했다.
+- `CommitChanges()` 이후 앱 풀을 재순환했다.
 
 ### R — Result
 
 - `EDUSYNC_LEGACY_CONNECTION_STRING`이 지정 앱 풀에 정상 저장됨
-- 재실행 시 중복 element 없이 값 갱신
+- 재실행 시 중복 요소 없이 값 갱신
 - 소스·`.env`에 DB 비밀번호 추가 없음
 
 ## 2026-07-26 — IIS 익명 인증 계정과 폴더 ACL 불일치
@@ -321,7 +321,7 @@ COM 관리 객체 생성은 해당 환경에서 안정적이지 않았다. 또�
 
 - HTTP 401 해소
 - 별도 로컬 사용자나 평문 Windows 비밀번호 불필요
-- localhost 실제 ASP 요청이 DB 연결 단계까지 진행
+- localhost의 ASP 요청이 DB 연결 단계까지 진행
 
 ## 2026-07-26 — 상세 오류 진단 설정 복구가 원래 오류를 가림
 
@@ -333,7 +333,7 @@ Classic ASP 500 원인을 확인하기 위해 상세 오류를 일시 활성화�
 
 ### A — Analysis
 
-`Get-WebConfigurationProperty` 반환값을 항상 `.Value`를 가진 객체라고 가정했지만 Windows PowerShell/WebAdministration 조합에서는 scalar로 반환됐다. `finally` 내부의 복구 오류가 앞선 WebException보다 나중에 발생해 최종 오류가 바뀌었다.
+`Get-WebConfigurationProperty` 반환값을 항상 `.Value`를 가진 객체라고 가정했지만 Windows PowerShell/WebAdministration 조합에서는 스칼라로 반환됐다. `finally` 내부의 복구 오류가 앞선 `WebException`보다 나중에 발생해 최종 오류가 바뀌었다.
 
 ### A — Action
 
@@ -364,7 +364,7 @@ Windows IIS에서 `legacy/progress.asp`를 처음 실행했을 때 정상 식별
 - OpenAPI 계약은 `type: integer`, `format: int64`이므로 입력은 부호가 선택적인 10진 정수이며 범위는 `-9223372036854775808`부터 `9223372036854775807`까지다.
 - Classic ASP의 VBScript에서는 `CDec`를 사용할 수 없었다. `CLng`은 32-bit이고 `CDbl`은 큰 정수의 정밀도를 보존하지 못하므로 대체 변환으로 적합하지 않다.
 - Microsoft OLE DB Driver 19의 `adBigInt` 매개변수는 검증된 10진 문자열을 직접 받아 전체 int64 범위를 정확히 바인딩했다.
-- 따라서 HTTP 경계에서 문자열 문법과 범위를 먼저 검증하고, 통과한 원문을 ADO에 넘기는 것이 가장 단순하고 정확했다.
+- HTTP 경계에서 문자열 문법과 범위를 먼저 검증하고, 통과한 원문만 ADO에 넘기도록 했다.
 
 ### A — Action
 
@@ -381,7 +381,7 @@ Windows IIS에서 `legacy/progress.asp`를 처음 실행했을 때 정상 식별
 
 | 입력 | 결과 |
 | --- | --- |
-| `2001`, `4001` | HTTP 200, 실제 진행 JSON |
+| `2001`, `4001` | HTTP 200, 진행 상태 JSON |
 | `0002001`, `0004001` | HTTP 200 |
 | `9223372036854775807` | 유효한 int64, 미존재 HTTP 404 |
 | `-9223372036854775808` | 유효한 int64, 미존재 HTTP 404 |
@@ -391,11 +391,11 @@ Windows IIS에서 `legacy/progress.asp`를 처음 실행했을 때 정상 식별
 
 추가 검증 결과:
 
-- `composer test`: Classic ASP 계약, MSSQL HTTP 통합, 동시성 T01/T02/T03/T04/T08/T12 모두 PASS
+- `composer test`: Classic ASP 계약, MSSQL HTTP 통합, 동시성 T01/T02/T03/T04/T08/T12 모두 통과
 - Redocly: OpenAPI 오류 0, 기존 권장 규칙 경고 4
-- 수정 파일 UTF-8/LF, replacement character 없음
+- 수정 파일 UTF-8/LF, 대체 문자(U+FFFD) 없음
 
-재발 방지 원칙: Classic ASP 런타임 동작을 바꾸는 경우 소스 계약 테스트만으로 완료 처리하지 않고 실제 IIS에서 정상값, 상하한, 상하한 초과, 비정수 표현을 함께 확인한다.
+재발 방지 원칙: Classic ASP 런타임 동작을 바꾸면 소스 계약 테스트와 함께 IIS에서 정상값, 상하한, 상하한 초과, 비정수 표현을 확인한다.
 
 ## 2026-07-26 — IIS 기본 사이트의 불필요한 80번 포트 노출
 
@@ -411,7 +411,7 @@ Classic ASP 검증에는 기본 사이트가 필요하지 않다. 프로젝트 �
 
 ### A — Action
 
-- stock `Default Web Site`를 중지했다.
+- 기본 `Default Web Site`를 중지했다.
 - `serverAutoStart=false`로 재부팅 후 자동 재개를 막았다.
 - EduSync 사이트의 localhost 바인딩은 유지했다.
 
@@ -427,25 +427,25 @@ Classic ASP 검증에는 기본 사이트가 필요하지 않다. 프로젝트 �
 
 ### P — Problem
 
-현재 소스를 read-only mount한 일회성 app 컨테이너에서 `composer test`를 실행하자 계약 테스트는 통과했지만 `/docs` 요청이 `127.0.0.1:80 connection refused`로 실패했다.
+현재 소스를 읽기 전용으로 마운트한 일회성 `app` 컨테이너에서 `composer test`를 실행하자 계약 테스트는 통과했지만 `/docs` 요청이 `127.0.0.1:80 connection refused`로 실패했다.
 
 ### A — Analysis
 
-통합 테스트의 `127.0.0.1`은 실행 중인 기존 app 컨테이너가 아니라 테스트 프로세스가 들어 있는 일회성 컨테이너 자신을 가리킨다. 그 컨테이너에서는 Apache가 시작되지 않은 상태였다.
+통합 테스트의 `127.0.0.1`은 실행 중인 기존 `app` 컨테이너가 아니라 테스트 프로세스가 들어 있는 일회성 컨테이너 자신을 가리킨다. 그 컨테이너에서는 Apache가 시작되지 않은 상태였다.
 
 ### A — Action
 
-- read-only source mount는 유지했다.
+- 소스의 읽기 전용 마운트는 유지했다.
 - 일회성 컨테이너 안에서 `apache2-foreground`를 먼저 시작했다.
-- `/health`가 준비될 때까지 제한 시간 내 polling한 뒤 `composer test`를 실행했다.
-- 최종적으로 Compose 이미지를 현재 소스로 재빌드하고 정식 app 컨테이너에서도 다시 테스트했다.
+- `/health`가 준비될 때까지 제한 시간 동안 폴링한 뒤 `composer test`를 실행했다.
+- Compose 이미지를 현재 소스로 다시 빌드하고 정식 `app` 컨테이너에서도 테스트했다.
 
 ### R — Result
 
-- 계약, MSSQL HTTP 통합, 동시성 테스트 모두 PASS
-- 실행 중 Docker 앱과 로컬 소스 일치
-- `/health`: connected
-- 실제 IIS Classic ASP 응답도 독립적으로 200/400/404 유지
+- 계약, MSSQL HTTP 통합, 동시성 테스트 모두 통과
+- 실행 중인 `app` 컨테이너와 현재 소스 일치
+- `/health`: `connected`
+- IIS Classic ASP 응답도 200/400/404 유지
 
 ## 2026-07-26 — Swagger UI 정적 자산과 라이선스 고지
 
@@ -462,19 +462,19 @@ CDN을 사용하지 않는 구성은 외부 장애에 영향을 받지 않지만
 ### A — Action
 
 - 공식 npm registry의 `swagger-ui-dist` 5.32.6 패키지를 내려받았다.
-- npm에 게시된 SHA-512 integrity 값과 내려받은 archive를 비교했다.
-- bundle, standalone preset, CSS를 교체하고 각 JavaScript 라이선스 파일을 함께 추가했다.
+- npm에 게시된 SHA-512 무결성 값과 내려받은 패키지를 비교했다.
+- `swagger-ui-bundle.js`, `swagger-ui-standalone-preset.js`, CSS를 교체하고 각 JavaScript 라이선스 파일을 함께 추가했다.
 - Swagger UI의 Apache-2.0 `LICENSE`와 `NOTICE`를 정적 자산 디렉터리에 포함했다.
 - README에 버전과 제3자 라이선스 적용 범위를 명시했다.
 
 ### R — Result
 
 - 공식 배포본과 저장소 정적 자산의 SHA-256 일치
-- JavaScript syntax check PASS
+- JavaScript 구문 검사 통과
 - `/docs`와 CSS·JavaScript 자산 HTTP 200
-- 실제 브라우저에서 API 제목, 6개 operation, Classic ASP 경로 렌더링 확인
-- 브라우저 console warning/error 0
-- 전체 계약·통합·동시성 테스트 PASS
+- 실제 브라우저에서 API 제목, 6개 작업, Classic ASP 경로가 정상 표시되는지 확인
+- 브라우저 콘솔 경고·오류 없음
+- 전체 계약·통합·동시성 테스트 통과
 
 ## 2026-07-26 — Compose 개발 포트의 전체 인터페이스 노출
 
@@ -492,11 +492,11 @@ Compose 기본 포트 매핑으로 API 8080과 SQL Server 1433이 `0.0.0.0`과 I
 
 - SQL Server 매핑을 `127.0.0.1:1433:1433`으로 제한했다.
 - API 매핑을 `127.0.0.1:${APP_PORT:-8080}:80`으로 제한했다.
-- 컨테이너를 재생성하고 실제 listening address와 API·IIS 응답을 다시 확인했다.
+- 컨테이너를 재생성하고 실제 수신 주소와 API·IIS 응답을 확인했다.
 
 ### R — Result
 
-- API와 SQL Server 포트가 IPv4 loopback에서만 대기
-- Docker 내부의 app→db 통신 정상
-- `/health`와 전체 계약·통합·동시성 테스트 PASS
+- API와 SQL Server 포트가 IPv4 루프백 주소에서만 대기
+- Docker 내부의 `app`→`db` 통신 정상
+- `/health`와 전체 계약·통합·동시성 테스트 통과
 - Windows IIS Classic ASP 조회 HTTP 200 유지

@@ -22,7 +22,7 @@ Resume follows the latest ordered event and can move backward. Furthest is monot
 
 ## D6 — Classic ASP stays read-only
 
-The Classic ASP artifact uses parameterized ADO BIGINT parameters and an IIS Application connection string. Its source and JSON fixture are contract-tested; no new write coupling is added.
+The Classic ASP adapter uses parameterized ADO BIGINT parameters and an IIS Application connection string. Its source and JSON fixture are contract-tested; no new write coupling is added.
 
 ## D7 — Keep application wiring explicit
 

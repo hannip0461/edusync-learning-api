@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="780" viewBox="0 0 1800 780" role="img" aria-label="EduSync Learning API — 전체 파이프라인">
+  <defs>
+    <style type="text/css"><![CDATA[
+
+  text, tspan {
+    font-family: 'Pretendard', 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  }
+
+    ]]></style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#1E3A5F"/>
+    </marker>
+    <marker id="arrow-soft" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#94A3B8"/>
+    </marker>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#2563EB"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#B91C1C"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#15803D"/>
+    </marker>
+    <filter id="softShadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2.2" flood-color="#0F172A" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+  <rect width="1800" height="780" fill="#FFFFFF"/>
+
+<text x="56" y="46" text-anchor="start" fill="#1E3A5F" font-size="30" font-weight="700">전체 파이프라인</text>
+<text x="56" y="74" text-anchor="start" fill="#64748B" font-size="14" font-weight="400">학습 이벤트 수집  →  검증  →  트랜잭션 처리  →  조회(Classic ASP · 보호자)</text>
+<text x="1744" y="46" text-anchor="end" fill="#94A3B8" font-size="13" font-weight="500">EduSync Learning API</text>
+<text x="170" y="158" text-anchor="middle" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1.2">EVENT SOURCES</text>
+<text x="425" y="158" text-anchor="middle" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1.2">AUTHENTICATION</text>
+<text x="730" y="158" text-anchor="middle" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1.2">PHP WRITE API</text>
+<text x="1110" y="158" text-anchor="middle" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1.2">SQL SERVER</text>
+<text x="1540" y="158" text-anchor="middle" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1.2">CONSUMERS</text>
+<rect x="56" y="192" width="228" height="96" rx="14" ry="14" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="170" y="232" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">웹 · 모바일 앱</text>
+<text x="170" y="258" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">Bearer Token</text>
+<text x="170" y="275" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">재생 · 완료 이벤트</text>
+<rect x="56" y="402" width="228" height="96" rx="14" ry="14" fill="#F0FDFA" stroke="#5EEAD4" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="170" y="442" text-anchor="middle" fill="#0F766E" font-size="15" font-weight="700">외부 플레이어 서버</text>
+<text x="170" y="468" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">Timestamp + HMAC</text>
+<text x="170" y="485" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">서버 간 콜백</text>
+<rect x="330" y="192" width="190" height="96" rx="12" ry="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="425" y="246" text-anchor="middle" fill="#0F172A" font-size="15" font-weight="700">Bearer 검증</text>
+<rect x="330" y="402" width="190" height="96" rx="12" ry="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="425" y="456" text-anchor="middle" fill="#0F172A" font-size="15" font-weight="700">HMAC 검증</text>
+<rect x="580" y="192" width="300" height="306" rx="16" ry="16" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="730" y="240" text-anchor="middle" fill="#1E3A5F" font-size="17" font-weight="700">PHP 학습 이벤트 API</text>
+<text x="730" y="286" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">JSON · 대상 검증</text>
+<text x="730" y="320" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">수강 등록 확인</text>
+<text x="730" y="354" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">멱등성 · 순서 판정</text>
+<text x="730" y="388" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">트랜잭션 경계</text>
+<rect x="950" y="192" width="320" height="306" rx="16" ry="16" fill="#F8FAFC" stroke="#1E3A5F" stroke-width="2" filter="url(#softShadow)"/>
+<text x="1110" y="238" text-anchor="middle" fill="#1E3A5F" font-size="18" font-weight="700">원자적 저장</text>
+<text x="1110" y="282" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">①  이벤트 우선 저장</text>
+<text x="1110" y="316" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">②  원본 이벤트 보존</text>
+<text x="1110" y="350" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">③  현재 학습상태 갱신</text>
+<text x="1110" y="384" text-anchor="middle" fill="#0F172A" font-size="14" font-weight="400">④  Commit / Rollback</text>
+<rect x="1020" y="438" width="180" height="36" rx="18" ry="18" fill="#DBEAFE" stroke="#93C5FD" stroke-width="1"/>
+<text x="1110" y="462" text-anchor="middle" fill="#2563EB" font-size="12" font-weight="700">UNIQUE · FK · INDEX</text>
+<rect x="1336" y="192" width="408" height="96" rx="14" ry="14" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="1540" y="226" text-anchor="middle" fill="#B45309" font-size="16" font-weight="700">Classic ASP API</text>
+<text x="1540" y="256" text-anchor="middle" fill="#64748B" font-size="13" font-weight="400">ADO 조회</text>
+<text x="1540" y="276" text-anchor="middle" fill="#64748B" font-size="13" font-weight="400">기존 JSON 응답 계약 유지</text>
+<rect x="1336" y="402" width="408" height="96" rx="14" ry="14" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5" filter="url(#softShadow)"/>
+<text x="1540" y="436" text-anchor="middle" fill="#15803D" font-size="16" font-weight="700">보호자 진행 조회</text>
+<text x="1540" y="466" text-anchor="middle" fill="#64748B" font-size="13" font-weight="400">보호자 연결 확인</text>
+<text x="1540" y="486" text-anchor="middle" fill="#64748B" font-size="13" font-weight="400">강의별 진행 상태</text>
+<line x1="284" y1="240" x2="330" y2="240" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="284" y1="450" x2="330" y2="450" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 520 240 C 555 240, 555 320, 580 320" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 520 450 C 555 450, 555 370, 580 370" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<line x1="880" y1="345" x2="950" y2="345" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="888" y="314" width="58" height="26" rx="13" ry="13" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.2"/>
+<text x="917" y="332" text-anchor="middle" fill="#2563EB" font-size="11" font-weight="700">BEGIN</text>
+<path d="M 1270 240 H 1336" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<path d="M 1270 450 H 1336" fill="none" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
+<rect x="56" y="620" width="1688" height="112" rx="16" ry="16" fill="#0F172A" stroke="#0F172A" stroke-width="0"/>
+<text x="96" y="664" text-anchor="start" fill="#FFFFFF" font-size="16" font-weight="700">핵심 보장</text>
+<text x="96" y="698" text-anchor="start" fill="#CBD5E1" font-size="14" font-weight="400">중복 요청은 한 번만 반영하고, 늦게 도착한 이벤트는 이어보기 위치를 되돌리지 않으며, 완료 상태와 기존 조회 계약을 유지한다.</text>
+</svg>

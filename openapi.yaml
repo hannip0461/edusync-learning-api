@@ -17,7 +17,6 @@ paths:
     get:
       operationId: getHealth
       summary: Application and SQL Server health probe
-      x-implementation-status: implemented
       security: []
       responses:
         '200':
@@ -41,7 +40,6 @@ paths:
         learner subject and one server-normalized source. `learner_id` must
         match that subject; clients cannot supply `source`. This is not
         production user authentication.
-      x-implementation-status: implemented
       security:
         - learnerBearer: []
       requestBody:
@@ -69,8 +67,14 @@ paths:
       operationId: receivePlayerEvent
       summary: Receive a server-to-server player callback
       description: |
-        The server normalizes `source` from the HMAC publisher; clients cannot supply it. The exact HMAC-SHA256 canonical byte input is `X-Player-Timestamp + "\n" + raw HTTP request body`, where the timestamp is its original ASCII decimal header value and the body is not parsed, reserialized, or whitespace-normalized before signing. Send `X-Player-Signature: sha256=<64 lowercase hexadecimal HMAC digest>` and a Unix-seconds timestamp with no leading zero (except `0`); its absolute skew must not exceed `HMAC_TOLERANCE_SECONDS` (300 by default).
-      x-implementation-status: implemented
+        The server normalizes `source` from the HMAC publisher; clients cannot
+        supply it. The canonical HMAC-SHA256 input is
+        `X-Player-Timestamp + "\n" + raw HTTP request body`. The timestamp uses
+        its original ASCII decimal header value, and the body is not parsed,
+        reserialized, or whitespace-normalized before signing. Send
+        `X-Player-Signature: sha256=<64 lowercase hexadecimal HMAC digest>` and
+        a Unix-seconds timestamp without leading zeroes (except `0`). Its
+        absolute skew must not exceed `HMAC_TOLERANCE_SECONDS` (300 by default).
       security:
         - playerHmac: []
       parameters:
@@ -100,7 +104,6 @@ paths:
       operationId: getGuardianLearnerProgress
       summary: Read one linked learner's lecture progress
       description: A local development guardian Bearer token maps to one configured guardian subject. The path `guardianId` must match that subject and an existing `guardian_links` row must link it to `learnerId`.
-      x-implementation-status: implemented
       security:
         - guardianBearer: []
       parameters:
@@ -123,7 +126,6 @@ paths:
       operationId: getClassicAspProgress
       summary: Read progress through the Classic ASP adapter
       description: Optional Windows IIS endpoint backed by a read-only SQL Server login.
-      x-implementation-status: implemented
       servers:
         - url: http://127.0.0.1:8091
       security: []
@@ -150,7 +152,6 @@ paths:
     get:
       operationId: getDocumentation
       summary: Serve interactive OpenAPI documentation
-      x-implementation-status: implemented
       security: []
       responses:
         '200':
@@ -197,7 +198,7 @@ components:
       description: Required authentication is missing, invalid, or outside its HMAC time tolerance.
       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
     Forbidden:
-      description: Authenticated subject mismatch, missing guardian link, or inactive/currently invalid enrollment.
+      description: Authenticated subject mismatch, missing guardian link, or an enrollment outside its active window.
       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
     NotFound:
       description: Requested learner, guardian, or lecture does not exist.
@@ -206,7 +207,7 @@ components:
       description: The normalized source and event_id already identify a different payload.
       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
     Unprocessable:
-      description: occurred_at is outside the enrollment period or more than five minutes ahead of server received time.
+      description: "`occurred_at` is outside the enrollment period or more than five minutes after the server-recorded `received_at`."
       content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } }
     InternalError:
       description: Unexpected server error; implementation details are not exposed.

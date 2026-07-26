@@ -3,12 +3,12 @@ param()
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 
-$placeholder = (@(
+$failureReport = (@(
     '<!doctype html>',
-    '<html lang="ko"><head><meta charset="utf-8"><title>EduSync Learning API Demo Report</title></head>',
+    '<html lang="en"><head><meta charset="utf-8"><title>EduSync Learning API Demo Report</title></head>',
     '<body><h1>EduSync Learning API Demo Report</h1><p class="FAIL">FAIL: demo did not complete.</p></body></html>'
 ) -join "`n") + "`n"
-[System.IO.File]::WriteAllText((Join-Path $PSScriptRoot 'demo-result.html'), $placeholder, [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllText((Join-Path $PSScriptRoot 'demo-result.html'), $failureReport, [System.Text.UTF8Encoding]::new($false))
 
 function Html([object]$value) {
     return [System.Net.WebUtility]::HtmlEncode([string]$value)
@@ -56,7 +56,7 @@ $finalState = Html (($report.final_state | ConvertTo-Json -Depth 8))
 $limits = ($report.limitations | ForEach-Object { "<li>$(Html $_)</li>" }) -join [Environment]::NewLine
 $html = @"
 <!doctype html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -71,10 +71,10 @@ $html = @"
 </head>
 <body><main>
   <h1>EduSync Learning API Demo Report</h1>
-  <p>Generated at $(Html $generatedAtUtc) from Docker Compose, HTTP API, and SQL Server checks. Credentials, HMAC signatures, and database passwords are excluded.</p>
+  <p>Verified at $(Html $generatedAtUtc) with Docker Compose, HTTP API, and SQL Server. Credentials, HMAC signatures, and database passwords are omitted.</p>
   <section class="card"><h2>Overall: <span class="$summary">$summary</span></h2><p>$(Html (($report.environment | ConvertTo-Json -Compress)))</p></section>
   <section class="card"><h2>Scenario results</h2><table><thead><tr><th>Scenario</th><th>Result</th><th>HTTP / test status</th><th>Request</th><th>Response</th><th>Details</th></tr></thead><tbody>$($rows -join [Environment]::NewLine)</tbody></table></section>
-  <section class="card"><h2>Fixture state before cleanup</h2><code>$finalState</code></section>
+  <section class="card"><h2>Scenario state and cleanup</h2><code>$finalState</code></section>
   <section class="card"><h2>Scope and limitations</h2><ul>$limits</ul></section>
 </main></body></html>
 "@

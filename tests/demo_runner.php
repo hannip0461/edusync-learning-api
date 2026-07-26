@@ -159,7 +159,7 @@ $report = [
     'environment' => [
         'runtime' => 'Docker Compose / PHP ' . PHP_VERSION,
         'database' => 'SQL Server through PDO_SQLSRV',
-        'authentication' => 'local fixture credentials',
+        'authentication' => 'local test credentials',
     ],
     'scenarios' => [],
     'summary' => ['passed' => false, 'count' => 0],
@@ -254,7 +254,7 @@ try {
     demoScenario($scenarios, 'Guardian linked progress read', $guardian['status'] === 200, $guardian['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{seed}/learners/{seed}/progress', 'authentication' => 'guardian bearer redacted'], $guardian['json']);
 
     $classicAsp = demoProcess([PHP_BINARY, __DIR__ . '/contract.php']);
-    demoScenario($scenarios, 'Classic ASP contract', $classicAsp['exit_code'] === 0, $classicAsp['exit_code'] === 0 ? 200 : 500, ['method' => 'source contract', 'path' => 'legacy/progress.asp'], trim($classicAsp['stdout']));
+    demoScenario($scenarios, 'Classic ASP contract', $classicAsp['exit_code'] === 0, $classicAsp['exit_code'] === 0 ? 200 : 500, ['command' => 'php tests/contract.php', 'target' => 'legacy/progress.asp'], trim($classicAsp['stdout']));
 
     $concurrency = demoProcess([PHP_BINARY, __DIR__ . '/concurrency.php', '--json']);
     $concurrencyResult = json_decode(trim($concurrency['stdout']), true);

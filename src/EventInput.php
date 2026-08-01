@@ -26,7 +26,6 @@ final class EventInput
         public readonly string $eventType,
         public readonly int $positionSeconds,
         public readonly \DateTimeImmutable $occurredAt,
-        public readonly string $occurredAtUtc,
         public readonly string $payloadHash,
     ) {
     }
@@ -65,6 +64,8 @@ final class EventInput
         }
 
         $occurredAt = self::occurredAt($payload['occurred_at'] ?? null);
+        // Canonical form for the payload hash only. Nothing outside this method reads
+        // it, so it stays a local instead of a property.
         $occurredAtUtc = $occurredAt->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\\TH:i:s.v\\Z');
         $canonical = json_encode([
             'event_id' => $eventId,
@@ -86,7 +87,6 @@ final class EventInput
             $payload['event_type'],
             $positionSeconds,
             $occurredAt->setTimezone(new \DateTimeZone('UTC')),
-            $occurredAtUtc,
             hash('sha256', $canonical),
         );
     }

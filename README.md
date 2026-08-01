@@ -50,12 +50,29 @@ Classic ASP 어댑터는 PHP 쓰기 경로와 분리된 읽기 전용 경계로 
 | --- | --- | --- | --- |
 | `GET` | `/health` | 없음 | API와 데이터베이스 상태 확인 |
 | `POST` | `/api/v1/learning-events` | Bearer | 학습자와 `source`를 확인한 뒤 이벤트 수집 |
-| `POST` | `/api/v1/player-events` | HMAC-SHA256 | 플레이어 콜백 서명 검증 후 이벤트 수집 |
+| `POST` | `/api/v1/player-events` | HMAC-SHA256 | 신뢰된 발행자 서명 검증 후 이벤트 수집. `learner_id` 소유권은 검사하지 않는다 |
 | `GET` | `/api/v1/guardians/{guardianId}/learners/{learnerId}/progress` | Bearer | 보호자 연결 관계 확인 후 진행 상태 조회 |
-| `GET` | `/progress.asp` | 없음 | 로컬 IIS에서 학습자·강의 진행 상태 조회 |
+| `GET` | `/progress.asp` | 없음, 루프백 전용 | 로컬 IIS에서 학습자와 강의 진행 상태 조회. ASP 소스가 루프백 아닌 호출자를 403으로 거부한다 |
 | `GET` | `/docs` | 없음 | 프로젝트에 포함된 Swagger UI 제공 |
 
 HMAC 서명 원문은 `X-Player-Timestamp + "\n" + raw HTTP request body`이며, 서명은 `sha256=<64 lowercase hex>` 형식이다. 서명 검증 전에는 요청 본문을 재직렬화하거나 공백을 정규화하지 않는다.
+
+### 두 쓰기 경로의 인가 범위가 다르다
+
+같은 컨트롤러를 쓰지만 인가 강도가 같지 않다. 의도한 설계다.
+
+| 경로 | 자격 증명이 지목하는 주체 | `learner_id` 소유권 검사 |
+| --- | --- | --- |
+| `POST /api/v1/learning-events` | `APP_BEARER_LEARNER_ID` 학습자 한 명 | 검사한다. 다르면 403 |
+| `POST /api/v1/player-events` | 발행자 하나(`PLAYER_EVENT_SOURCE`) | 검사하지 않는다 |
+
+HMAC 자격 증명에는 학습자 식별자가 없다. 플레이어는 여러 학습자를 대신해 콜백을 보내는 서버 대 서버 발행자이므로 한 명에게 묶을 수 없다. 따라서 `PLAYER_HMAC_SECRET`을 가진 쪽은 임의의 `learner_id`로 이벤트를 쓸 수 있다.
+
+인가가 없다는 뜻은 아니다. HMAC 경로도 학습자와 강의가 존재해야 하고(없으면 404) 해당 과정에 `ACTIVE` 수강이 있어야 하며(없으면 403) `occurred_at`이 수강 기간 안이어야 한다(벗어나면 422). 검사하지 않는 것은 소유권 하나다.
+
+운영에서 이 경로를 열려면 `PLAYER_HMAC_SECRET`을 신뢰 경계 안에서만 유통해야 한다. 발행자를 신뢰할 수 없다면 자격 증명에 학습자 범위를 담고(예: 발행자별 허용 학습자 목록이나 서명 대상에 포함된 주체) 그 값과 `learner_id`를 대조하는 검사를 추가해야 한다. 이 저장소는 그 요구를 범위에 넣지 않았다.
+
+`tests/integration.php`가 두 경로의 차이를 각각 고정한다. Bearer 경로가 다른 학습자를 403으로 거부하는 것과 HMAC 경로가 같은 학습자를 200으로 수락하는 것을 함께 확인한다.
 
 ## 데이터 일관성
 
@@ -127,6 +144,10 @@ Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList "-NoProfile -Execut
 ```
 
 기본 주소는 `http://127.0.0.1:8091`이다. 연결 문자열은 소스나 `.env`에 저장하지 않고 IIS 앱 풀 환경변수로 전달한다. Classic ASP 코드는 매개변수화된 ADO 쿼리와 조회 전용 SQL 계정을 사용한다.
+
+이 경로에는 사용자 인증이 없다. 경계는 호출자의 네트워크 주소다. 설치 스크립트가 사이트를 `127.0.0.1`에만 바인딩하지만, 그 통제만 있으면 바인딩을 넓히는 순간 인증 없는 조회 엔드포인트가 된다. 그래서 `legacy/progress.asp`가 `REMOTE_ADDR`을 직접 검사해 `127.0.0.0/8`과 `::1`이 아닌 호출자를 403으로 거부한다. 쿼리 문자열을 읽거나 연결을 열기 전에 검사하며, 계약 테스트가 이 순서까지 확인한다.
+
+`REMOTE_ADDR`은 TCP 상대 주소이므로 `X-Forwarded-For`와 달리 클라이언트가 지정할 수 없다. 대신 이 어댑터를 리버스 프록시 뒤에 두면 프록시가 상대가 되어 모든 전달 요청이 통과한다. 프록시 뒤에 두지 않는다.
 
 ## 문서
 

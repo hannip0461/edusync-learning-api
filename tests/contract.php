@@ -55,6 +55,38 @@ try {
         'Classic ASP BIGINT parameters must not use unsupported or lossy VBScript conversions',
     );
 
+    // The loopback boundary must live in the deployed source, not only in the IIS
+    // installer. Presence is not enough: it has to gate the request before any
+    // credential is used or any row is read, otherwise the check is decorative.
+    assertSameValue(
+        true,
+        str_contains($aspSource, 'Request.ServerVariables("REMOTE_ADDR")'),
+        'Classic ASP source must read the peer address from REMOTE_ADDR',
+    );
+    assertSameValue(
+        true,
+        str_contains($aspSource, 'Response.Status = "403 Forbidden"'),
+        'Classic ASP source must refuse non-loopback clients itself',
+    );
+    assertSameValue(
+        false,
+        (bool) preg_match('/ServerVariables\("HTTP_(?:X_FORWARDED_FOR|CLIENT_IP)"\)/i', $aspSource),
+        'Classic ASP loopback check must not trust a client-settable forwarding header',
+    );
+    $remoteAddressAt = strpos($aspSource, 'REMOTE_ADDR');
+    $connectionOpenAt = strpos($aspSource, 'connection.Open Application(');
+    $queryStringAt = strpos($aspSource, 'Request.QueryString(');
+    assertSameValue(
+        true,
+        $remoteAddressAt !== false && $connectionOpenAt !== false && $remoteAddressAt < $connectionOpenAt,
+        'Loopback check must run before the database connection is opened',
+    );
+    assertSameValue(
+        true,
+        $queryStringAt !== false && $remoteAddressAt < $queryStringAt,
+        'Loopback check must run before any query string input is read',
+    );
+
     $fixturePath = __DIR__ . '/fixtures/classic-asp-progress.json';
     $fixture = json_decode((string) file_get_contents($fixturePath), true, 512, JSON_THROW_ON_ERROR);
     $response = $fixture['response'] ?? null;
@@ -80,14 +112,12 @@ try {
     assertSameValue(true, is_string($response['last_studied_at']), 'last_studied_at must be an ISO-8601 string');
     assertSameValue(true, $response['completed_at'] === null || is_string($response['completed_at']), 'completed_at must be null or an ISO-8601 string');
 
-    $config = Config::fromEnvironment([
+    $baseEnvironment = [
         'DB_HOST' => 'db',
         'DB_PORT' => '1433',
         'DB_DATABASE' => 'edusync',
         'DB_USERNAME' => 'sa',
         'DB_PASSWORD' => 'test-password',
-        'DB_ENCRYPT' => 'true',
-        'DB_TRUST_SERVER_CERTIFICATE' => 'true',
         'APP_BEARER_TOKEN' => 'local-app-token-change-me',
         'APP_BEARER_LEARNER_ID' => '2001',
         'APP_EVENT_SOURCE' => 'local-app',
@@ -96,11 +126,29 @@ try {
         'PLAYER_HMAC_SECRET' => 'local-player-hmac-secret-change-me',
         'PLAYER_EVENT_SOURCE' => 'local-player',
         'HMAC_TOLERANCE_SECONDS' => '300',
+    ];
+
+    $config = Config::fromEnvironment($baseEnvironment + [
+        'DB_ENCRYPT' => 'true',
+        'DB_TRUST_SERVER_CERTIFICATE' => 'true',
     ]);
     assertSameValue(
         'sqlsrv:Server=db,1433;Database=edusync;Encrypt=yes;TrustServerCertificate=yes;LoginTimeout=5',
         $config->dsn(),
         'PDO_SQLSRV configuration changed',
+    );
+
+    // An unset DB_TRUST_SERVER_CERTIFICATE must keep certificate validation on.
+    // Trusting any presented certificate has to be an explicit local opt-in.
+    assertSameValue(
+        'sqlsrv:Server=db,1433;Database=edusync;Encrypt=yes;TrustServerCertificate=no;LoginTimeout=5',
+        Config::fromEnvironment($baseEnvironment)->dsn(),
+        'Default configuration must encrypt and validate the server certificate',
+    );
+    assertSameValue(
+        'sqlsrv:Server=db,1433;Database=edusync;Encrypt=yes;TrustServerCertificate=no;LoginTimeout=5',
+        Config::fromEnvironment($baseEnvironment + ['DB_TRUST_SERVER_CERTIFICATE' => 'false'])->dsn(),
+        'Explicit DB_TRUST_SERVER_CERTIFICATE=false must validate the server certificate',
     );
 
     fwrite(STDOUT, "PASS Classic ASP contract and PDO_SQLSRV configuration\n");

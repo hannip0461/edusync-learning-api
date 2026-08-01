@@ -10,6 +10,25 @@ Response.CodePage = 65001
 Response.Charset = "utf-8"
 Response.ContentType = "application/json"
 
+' This adapter has no user authentication by design (see DECISIONS D6). Until now the
+' only thing keeping it off the network was the IIS binding created by
+' scripts/setup-iis-classic-asp.ps1. That put the entire control in an installer, so a
+' widened binding would turn this into an unauthenticated lookup endpoint with nothing
+' in the deployed source to stop it. Enforce the boundary here too.
+' REMOTE_ADDR is the TCP peer address, so unlike X-Forwarded-For a client cannot set
+' it. Do not put this adapter behind a reverse proxy: the proxy would then be the peer
+' and every forwarded request would pass.
+' Concatenating with "" coerces a missing value to an empty string. Without it a Null
+' REMOTE_ADDR would make both comparisons Null, the If would not run, and the request
+' would be served. This makes the unknown case fail closed.
+Dim remoteAddress
+remoteAddress = "" & Request.ServerVariables("REMOTE_ADDR")
+If Left(remoteAddress, 4) <> "127." And remoteAddress <> "::1" Then
+    Response.Status = "403 Forbidden"
+    Response.Write "{""error"":""this adapter accepts loopback clients only""}"
+    Response.End
+End If
+
 Dim learnerId, lectureId
 learnerId = Request.QueryString("learner_id")
 lectureId = Request.QueryString("lecture_id")

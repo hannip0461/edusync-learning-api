@@ -55,9 +55,7 @@ try {
         'Classic ASP BIGINT parameters must not use unsupported or lossy VBScript conversions',
     );
 
-    // The loopback boundary must live in the deployed source, not only in the IIS
-    // installer. Presence is not enough: it has to gate the request before any
-    // credential is used or any row is read, otherwise the check is decorative.
+    // 루프백 검사는 입력과 DB 연결보다 먼저 실행되어야 한다.
     assertSameValue(
         true,
         str_contains($aspSource, 'Request.ServerVariables("REMOTE_ADDR")'),
@@ -73,17 +71,18 @@ try {
         (bool) preg_match('/ServerVariables\("HTTP_(?:X_FORWARDED_FOR|CLIENT_IP)"\)/i', $aspSource),
         'Classic ASP loopback check must not trust a client-settable forwarding header',
     );
-    $remoteAddressAt = strpos($aspSource, 'REMOTE_ADDR');
+    $remoteAddressAt = strpos($aspSource, 'Request.ServerVariables("REMOTE_ADDR")');
+    $loopbackGuardEndAt = $remoteAddressAt === false ? false : strpos($aspSource, 'End If', $remoteAddressAt);
     $connectionOpenAt = strpos($aspSource, 'connection.Open Application(');
     $queryStringAt = strpos($aspSource, 'Request.QueryString(');
     assertSameValue(
         true,
-        $remoteAddressAt !== false && $connectionOpenAt !== false && $remoteAddressAt < $connectionOpenAt,
+        $loopbackGuardEndAt !== false && $connectionOpenAt !== false && $loopbackGuardEndAt < $connectionOpenAt,
         'Loopback check must run before the database connection is opened',
     );
     assertSameValue(
         true,
-        $queryStringAt !== false && $remoteAddressAt < $queryStringAt,
+        $loopbackGuardEndAt !== false && $queryStringAt !== false && $loopbackGuardEndAt < $queryStringAt,
         'Loopback check must run before any query string input is read',
     );
 
@@ -138,8 +137,7 @@ try {
         'PDO_SQLSRV configuration changed',
     );
 
-    // An unset DB_TRUST_SERVER_CERTIFICATE must keep certificate validation on.
-    // Trusting any presented certificate has to be an explicit local opt-in.
+    // 인증서 신뢰 예외는 명시적으로 설정한 경우에만 허용한다.
     assertSameValue(
         'sqlsrv:Server=db,1433;Database=edusync;Encrypt=yes;TrustServerCertificate=no;LoginTimeout=5',
         Config::fromEnvironment($baseEnvironment)->dsn(),

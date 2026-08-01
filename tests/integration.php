@@ -9,8 +9,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 const TEST_GUARDIAN_ID = 1001;
 const TEST_LEARNER_ID = 2001;
-// Exists and holds an active enrollment, but is neither the bearer subject nor
-// linked to the guardian. Used to pin both write-path authorization boundaries.
+// Bearer 주체나 보호자 연결에 포함되지 않은 수강 학습자
 const TEST_UNLINKED_LEARNER_ID = 900000003;
 const TEST_COURSE_ID = 900000004;
 const TEST_LECTURE_ID = 900000005;
@@ -251,10 +250,7 @@ try {
     $afterFailures = (int) $connection->query("SELECT COUNT(*) FROM dbo.learning_events WHERE event_id IN ('player-bad-signature', 'player-stale')")->fetchColumn();
     assertIntegrationSame($beforeFailures, $afterFailures, 'Failed HMAC requests must not modify the database');
 
-    // DECISIONS D10. The two write paths differ in authorization strength on purpose:
-    // the learner bearer token is bound to one subject, the HMAC credential is a
-    // trusted publisher with no learner identity. Pin both halves of that asymmetry
-    // so it cannot change without a failing test.
+    // Bearer는 학습자 한 명에, HMAC은 신뢰된 발행자에 결속된다(DECISIONS D10).
     $foreignEvent = eventPayload('foreign-learner-write', TEST_UNLINKED_LEARNER_ID, TEST_LECTURE_ID, 'session-foreign', 1, 60, $occurred);
     $foreignCount = $connection->prepare('SELECT COUNT(*) FROM dbo.learning_events WHERE event_id = ?');
     assertIntegrationSame(403, learnerRequest($config, $foreignEvent)['status'], 'Bearer path must refuse a learner_id other than its bound subject');
@@ -263,16 +259,10 @@ try {
     assertIntegrationSame(200, playerRequest($config, $foreignEvent)['status'], 'HMAC publisher path must accept an enrolled learner it does not own');
     $foreignCount->execute(['foreign-learner-write']);
     assertIntegrationSame(1, (int) $foreignCount->fetchColumn(), 'Accepted HMAC publisher write must store exactly one event');
-    // The HMAC path is not unauthorized. Learner existence and an active enrollment
-    // are still required; only learner_id ownership is not checked.
     assertIntegrationSame(404, playerRequest($config, eventPayload('foreign-missing-learner', 900000097, TEST_LECTURE_ID, 'session-foreign', 2, 60, $occurred))['status'], 'HMAC publisher path must still require an existing learner');
     assertIntegrationSame(403, playerRequest($config, eventPayload('foreign-unenrolled-course', TEST_UNLINKED_LEARNER_ID, TEST_UNENROLLED_LECTURE_ID, 'session-foreign', 3, 60, $occurred))['status'], 'HMAC publisher path must still require an active enrollment');
 
-    // DECISIONS D11. There is no nonce store, so a signature stays replayable for the
-    // whole HMAC_TOLERANCE_SECONDS window. What makes that harmless is the unique
-    // constraint on (source, event_id), not the auth layer. Replay the exact same
-    // timestamp, body, and signature and pin that the auth layer still accepts it
-    // while the data layer absorbs it.
+    // HMAC 재전송은 유니크 제약에서 멱등 처리된다(DECISIONS D11).
     $replayEvent = eventPayload('hmac-replay', TEST_LEARNER_ID, TEST_LECTURE_ID, 'session-replay', 9, 140, $occurred);
     $replayTimestamp = (string) time();
     $replaySignature = 'sha256=' . hash_hmac(

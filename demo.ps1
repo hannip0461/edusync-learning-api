@@ -5,8 +5,8 @@ Set-Location $PSScriptRoot
 
 $failureReport = (@(
     '<!doctype html>',
-    '<html lang="en"><head><meta charset="utf-8"><title>EduSync Learning API Demo Report</title></head>',
-    '<body><h1>EduSync Learning API Demo Report</h1><p class="FAIL">FAIL: demo did not complete.</p></body></html>'
+    '<html lang="ko"><head><meta charset="utf-8"><title>EduSync Learning API &#xB370;&#xBAA8; &#xAC80;&#xC99D; &#xBCF4;&#xACE0;&#xC11C;</title></head>',
+    '<body><h1>EduSync Learning API &#xB370;&#xBAA8; &#xAC80;&#xC99D; &#xBCF4;&#xACE0;&#xC11C;</h1><p class="FAIL">FAIL: &#xB370;&#xBAA8;&#xB97C; &#xC644;&#xB8CC;&#xD558;&#xC9C0; &#xBABB;&#xD588;&#xC2B5;&#xB2C8;&#xB2E4;.</p></body></html>'
 ) -join "`n") + "`n"
 [System.IO.File]::WriteAllText((Join-Path $PSScriptRoot 'demo-result.html'), $failureReport, [System.Text.UTF8Encoding]::new($false))
 
@@ -56,11 +56,11 @@ $finalState = Html (($report.final_state | ConvertTo-Json -Depth 8))
 $limits = ($report.limitations | ForEach-Object { "<li>$(Html $_)</li>" }) -join [Environment]::NewLine
 $html = @"
 <!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>EduSync Learning API Demo Report</title>
+  <title>EduSync Learning API &#xB370;&#xBAA8; &#xAC80;&#xC99D; &#xBCF4;&#xACE0;&#xC11C;</title>
   <style>
     body { background: #f5f7fb; color: #172033; font: 15px/1.5 system-ui, sans-serif; margin: 0; }
     main { max-width: 1400px; margin: 36px auto; padding: 0 24px 48px; }
@@ -70,12 +70,12 @@ $html = @"
   </style>
 </head>
 <body><main>
-  <h1>EduSync Learning API Demo Report</h1>
-  <p>Verified at $(Html $generatedAtUtc) with Docker Compose, HTTP API, and SQL Server. Credentials, HMAC signatures, and database passwords are omitted.</p>
-  <section class="card"><h2>Overall: <span class="$summary">$summary</span></h2><p>$(Html (($report.environment | ConvertTo-Json -Compress)))</p></section>
-  <section class="card"><h2>Scenario results</h2><table><thead><tr><th>Scenario</th><th>Result</th><th>HTTP / test status</th><th>Request</th><th>Response</th><th>Details</th></tr></thead><tbody>$($rows -join [Environment]::NewLine)</tbody></table></section>
-  <section class="card"><h2>Scenario state and cleanup</h2><code>$finalState</code></section>
-  <section class="card"><h2>Scope and limitations</h2><ul>$limits</ul></section>
+  <h1>EduSync Learning API &#xB370;&#xBAA8; &#xAC80;&#xC99D; &#xBCF4;&#xACE0;&#xC11C;</h1>
+  <p>$(Html $generatedAtUtc)&#xC5D0; Docker Compose, HTTP API, SQL Server&#xB85C; &#xAC80;&#xC99D;&#xD588;&#xC2B5;&#xB2C8;&#xB2E4;. &#xC790;&#xACA9; &#xC99D;&#xBA85;, HMAC &#xC11C;&#xBA85;, &#xB370;&#xC774;&#xD130;&#xBCA0;&#xC774;&#xC2A4; &#xBE44;&#xBC00;&#xBC88;&#xD638;&#xB294; &#xC81C;&#xC678;&#xD588;&#xC2B5;&#xB2C8;&#xB2E4;.</p>
+  <section class="card"><h2>&#xC804;&#xCCB4; &#xACB0;&#xACFC;: <span class="$summary">$summary</span></h2><p>$(Html (($report.environment | ConvertTo-Json -Compress)))</p></section>
+  <section class="card"><h2>&#xC2DC;&#xB098;&#xB9AC;&#xC624; &#xACB0;&#xACFC;</h2><table><thead><tr><th>&#xC2DC;&#xB098;&#xB9AC;&#xC624;</th><th>&#xACB0;&#xACFC;</th><th>HTTP / &#xD14C;&#xC2A4;&#xD2B8; &#xC0C1;&#xD0DC;</th><th>&#xC694;&#xCCAD;</th><th>&#xC751;&#xB2F5;</th><th>&#xC138;&#xBD80; &#xC815;&#xBCF4;</th></tr></thead><tbody>$($rows -join [Environment]::NewLine)</tbody></table></section>
+  <section class="card"><h2>&#xCD5C;&#xC885; &#xC0C1;&#xD0DC;&#xC640; &#xC815;&#xB9AC; &#xACB0;&#xACFC;</h2><code>$finalState</code></section>
+  <section class="card"><h2>&#xAC80;&#xC99D; &#xBC94;&#xC704;&#xC640; &#xD55C;&#xACC4;</h2><ul>$limits</ul></section>
 </main></body></html>
 "@
 

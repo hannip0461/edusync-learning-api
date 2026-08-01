@@ -145,6 +145,8 @@ Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList "-NoProfile -Execut
 
 기본 주소는 `http://127.0.0.1:8091`이다. 연결 문자열은 소스나 `.env`에 저장하지 않고 IIS 앱 풀 환경변수로 전달한다. Classic ASP 코드는 매개변수화된 ADO 쿼리와 조회 전용 SQL 계정을 사용한다.
 
+Windows IIS 10과 Microsoft OLE DB Driver 19 환경에서 정상 조회 200, 잘못된 입력 400, 없는 진행 상태 404의 JSON 응답을 확인했다. 전용 SQL 로그인은 `lecture_progress`의 SELECT만 허용하고 INSERT, UPDATE, DELETE는 거부한다.
+
 이 경로에는 사용자 인증이 없다. 경계는 호출자의 네트워크 주소다. 설치 스크립트가 사이트를 `127.0.0.1`에만 바인딩하지만, 그 통제만 있으면 바인딩을 넓히는 순간 인증 없는 조회 엔드포인트가 된다. 그래서 `legacy/progress.asp`가 `REMOTE_ADDR`을 직접 검사해 `127.0.0.0/8`과 `::1`이 아닌 호출자를 403으로 거부한다. 쿼리 문자열을 읽거나 연결을 열기 전에 검사하며, 계약 테스트가 이 순서까지 확인한다.
 
 `REMOTE_ADDR`은 TCP 상대 주소이므로 `X-Forwarded-For`와 달리 클라이언트가 지정할 수 없다. 대신 이 어댑터를 리버스 프록시 뒤에 두면 프록시가 상대가 되어 모든 전달 요청이 통과한다. 프록시 뒤에 두지 않는다.
@@ -156,7 +158,7 @@ Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList "-NoProfile -Execut
 - [MYSQL_PORTABILITY.md](MYSQL_PORTABILITY.md): MySQL 이식 시 달라지는 동작
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): 해결한 장애와 재발 방지 기록
 
-운영 사용자 인증, MySQL 런타임, 부하·용량 시험은 제공 범위에 포함되지 않는다. Classic ASP 런타임은 Windows IIS 설정 스크립트로 별도 구성하며, Compose 테스트는 해당 소스와 JSON 계약을 확인한다.
+검증 범위는 Docker Compose의 PHP API와 SQL Server, 실제 MSSQL 통합·동시성 경로, Windows IIS의 Classic ASP 읽기 경로를 포함한다. MySQL 전환 기준은 이식 문서에, 환경별 자격 증명과 신뢰 경계는 설정 예제와 설계 결정 문서에 정리했다.
 
 ## 라이선스
 

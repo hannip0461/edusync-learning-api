@@ -86,7 +86,18 @@ docker compose up -d --force-recreate app | Out-Null
 if ($LASTEXITCODE -ne 0) {
     throw 'final docker compose up failed.'
 }
-$health = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/health' -Method Get
+$health = $null
+for ($attempt = 0; $attempt -lt 20; $attempt++) {
+    try {
+        $health = Invoke-RestMethod -Uri 'http://127.0.0.1:8080/health' -Method Get
+        break
+    } catch {
+        if ($attempt -eq 19) {
+            throw
+        }
+        Start-Sleep -Milliseconds 500
+    }
+}
 if ($summary -ne 'PASS' -or $health.database -ne 'connected' -or $health.probe -ne 1 -or $runnerExitCode -ne 0) {
     exit 1
 }

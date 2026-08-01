@@ -500,3 +500,32 @@ Compose 기본 포트 매핑으로 API 8080과 SQL Server 1433이 `0.0.0.0`과 I
 - Docker 내부의 `app`→`db` 통신 정상
 - `/health`와 전체 계약·통합·동시성 테스트 통과
 - Windows IIS Classic ASP 조회 HTTP 200 유지
+
+## 2026-08-02 — 저장소 경로 변경 후 IIS 500.19
+
+상태: 해결
+
+### P — 문제
+
+저장소 디렉터리 이름을 변경한 뒤 `http://127.0.0.1:8091/progress.asp`가 HTTP 500.19와 오류 코드 `0x80070003`을 반환했다. 오류 화면에는 IIS가 이전 디렉터리의 `legacy/web.config`를 읽으려 한다고 표시됐다.
+
+#### 원인 분석
+
+IIS 사이트의 루트 가상 디렉터리는 소스 저장소의 절대 경로를 보관한다. 저장소 디렉터리를 옮겼지만 IIS의 `physicalPath`는 이전 값을 유지했다. W3SVC, WAS, Classic ASP와 OLE DB Driver 19는 이미 정상 설치돼 있었으므로 기능 재설치 대상이 아니었다.
+
+### A — 조치
+
+- IIS 가상 디렉터리가 알려진 이전 EduSync 경로를 가리키는지 먼저 확인했다.
+- AppCmd로 `EduSyncLegacyAsp/`의 `physicalPath`만 현재 `legacy` 디렉터리로 변경했다.
+- 프로젝트의 IIS 설정 스크립트를 다시 실행해 앱 풀 환경변수, 폴더 ACL과 조회 전용 SQL 로그인을 갱신했다.
+- 실제 HTTP 응답과 SQL 권한을 다시 확인했다.
+
+### R — 결과
+
+- Classic ASP 정상 조회: HTTP 200 JSON
+- 잘못된 입력: HTTP 400 JSON
+- 없는 진행 상태: HTTP 404 JSON
+- 비루프백 요청: IIS 바인딩에서 거부
+- `edusync_legacy_reader`: SELECT 허용, INSERT/UPDATE/DELETE 거부
+- W3SVC와 WAS 정상, 재부팅 불필요
+- PHP `/health`: HTTP 200, `database=connected`, `probe=1`

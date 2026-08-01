@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: 저장소 받기
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: 로컬 실행 설정 준비
         run: cp .env.example .env

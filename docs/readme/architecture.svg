@@ -36,7 +36,7 @@
 <text x="56" y="74" text-anchor="start" fill="#64748B" font-size="14" font-weight="400">PHP 쓰기 경로와 Classic ASP 읽기 경로가 동일한 SQL Server 학습 상태를 공유</text>
 <text x="1744" y="46" text-anchor="end" fill="#94A3B8" font-size="13" font-weight="500">EduSync Learning API</text>
 <rect x="48" y="104" width="1704" height="136" rx="16" ry="16" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.2"/>
-<text x="72" y="130" text-anchor="start" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1">CLIENTS &amp; EXTERNAL SYSTEMS</text>
+<text x="72" y="130" text-anchor="start" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1">클라이언트와 외부 시스템</text>
 <rect x="88" y="152" width="340" height="60" rx="12" ry="12" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5" filter="url(#softShadow)"/>
 <text x="258" y="188" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">웹 학습 플레이어</text>
 <rect x="478" y="152" width="340" height="60" rx="12" ry="12" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5" filter="url(#softShadow)"/>
@@ -46,22 +46,22 @@
 <rect x="1258" y="152" width="340" height="60" rx="12" ry="12" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1.5" filter="url(#softShadow)"/>
 <text x="1428" y="188" text-anchor="middle" fill="#B45309" font-size="15" font-weight="700">보호자 조회 클라이언트</text>
 <rect x="48" y="272" width="1120" height="400" rx="16" ry="16" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5"/>
-<text x="72" y="302" text-anchor="start" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1">PHP WRITE API</text>
+<text x="72" y="302" text-anchor="start" fill="#2563EB" font-size="12" font-weight="700" letter-spacing="1">PHP 쓰기 API</text>
 <rect x="80" y="322" width="1056" height="58" rx="12" ry="12" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1.5" filter="url(#softShadow)"/>
 <text x="608" y="348" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">인증 미들웨어</text>
 <text x="608" y="368" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">Bearer  ·  Timestamp  ·  HMAC</text>
 <rect x="80" y="416" width="300" height="132" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.3" filter="url(#softShadow)"/>
-<text x="230" y="450" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">Controller</text>
+<text x="230" y="450" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">컨트롤러</text>
 <text x="230" y="480" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">HTTP · JSON 계약</text>
 <text x="230" y="500" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">입력 검증</text>
 <text x="230" y="520" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">상태 코드</text>
 <rect x="430" y="416" width="300" height="132" rx="12" ry="12" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.6" filter="url(#softShadow)"/>
-<text x="580" y="450" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">Progress Service</text>
+<text x="580" y="450" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">진행 상태 서비스</text>
 <text x="580" y="480" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">멱등성</text>
 <text x="580" y="500" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">순서 · 완료 규칙</text>
 <text x="580" y="520" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">트랜잭션 경계</text>
 <rect x="780" y="416" width="300" height="132" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.3" filter="url(#softShadow)"/>
-<text x="930" y="450" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">Repository</text>
+<text x="930" y="450" text-anchor="middle" fill="#1E3A5F" font-size="16" font-weight="700">저장소</text>
 <text x="930" y="480" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">원자적 SQL</text>
 <text x="930" y="500" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">이벤트 우선 INSERT</text>
 <text x="930" y="520" text-anchor="middle" fill="#0F172A" font-size="13" font-weight="400">현재 진행 상태 갱신</text>
@@ -72,7 +72,7 @@
 <line x1="730" y1="482" x2="780" y2="482" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
 <line x1="580" y1="548" x2="580" y2="580" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
 <rect x="1210" y="272" width="542" height="400" rx="16" ry="16" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1.5"/>
-<text x="1234" y="302" text-anchor="start" fill="#B45309" font-size="12" font-weight="700" letter-spacing="1">IIS READ ADAPTER</text>
+<text x="1234" y="302" text-anchor="start" fill="#B45309" font-size="12" font-weight="700" letter-spacing="1">IIS 읽기 어댑터</text>
 <rect x="1246" y="340" width="470" height="96" rx="12" ry="12" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1.5" filter="url(#softShadow)"/>
 <text x="1481" y="378" text-anchor="middle" fill="#B45309" font-size="17" font-weight="700">Classic ASP API</text>
 <text x="1481" y="404" text-anchor="middle" fill="#64748B" font-size="13" font-weight="400">기존 JSON 응답 계약 유지</text>
@@ -85,7 +85,7 @@
 <line x1="1038" y1="212" x2="1038" y2="322" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
 <line x1="1428" y1="212" x2="1428" y2="340" stroke="#1E3A5F" stroke-width="1.75" stroke-linecap="round" marker-end="url(#arrow)"/>
 <rect x="48" y="708" width="1704" height="220" rx="16" ry="16" fill="#F8FAFC" stroke="#1E3A5F" stroke-width="1.6"/>
-<text x="72" y="738" text-anchor="start" fill="#1E3A5F" font-size="12" font-weight="700" letter-spacing="1">SQL SERVER DATA MODEL</text>
+<text x="72" y="738" text-anchor="start" fill="#1E3A5F" font-size="12" font-weight="700" letter-spacing="1">SQL SERVER 데이터 모델</text>
 <rect x="80" y="788" width="280" height="100" rx="12" ry="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5" filter="url(#softShadow)"/>
 <text x="220" y="830" text-anchor="middle" fill="#1E3A5F" font-size="15" font-weight="700">enrollments</text>
 <text x="220" y="858" text-anchor="middle" fill="#64748B" font-size="12" font-weight="400">수강기간 · 상태</text>
@@ -105,19 +105,19 @@
 <path d="M 260 632 V 716 H 220 V 784" fill="none" stroke="#B45309" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-amber)"/>
 <path d="M 500 632 V 732 H 560 V 784" fill="none" stroke="#B45309" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-amber)"/>
 <rect x="128" y="680" width="118" height="24" rx="8" ry="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
-<text x="187" y="697" text-anchor="middle" fill="#B45309" font-size="10" font-weight="700">ENROLLMENT CHECK</text>
+<text x="187" y="697" text-anchor="middle" fill="#B45309" font-size="10" font-weight="700">수강 확인</text>
 <rect x="378" y="680" width="108" height="24" rx="8" ry="8" fill="#FFFFFF" stroke="#FCD34D" stroke-width="1"/>
-<text x="432" y="697" text-anchor="middle" fill="#B45309" font-size="10" font-weight="700">GUARDIAN CHECK</text>
+<text x="432" y="697" text-anchor="middle" fill="#B45309" font-size="10" font-weight="700">보호자 확인</text>
 
 <path d="M 880 548 V 684 H 900 V 784" fill="none" stroke="#2563EB" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-blue)"/>
 <rect x="806" y="680" width="64" height="24" rx="8" ry="8" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1"/>
-<text x="838" y="697" text-anchor="middle" fill="#2563EB" font-size="10" font-weight="700">EVENT</text>
+<text x="838" y="697" text-anchor="middle" fill="#2563EB" font-size="10" font-weight="700">이벤트</text>
 
 <path d="M 980 548 V 668 H 1200 V 784" fill="none" stroke="#2563EB" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-blue)"/>
 <rect x="1068" y="680" width="88" height="24" rx="8" ry="8" fill="#FFFFFF" stroke="#93C5FD" stroke-width="1"/>
-<text x="1112" y="697" text-anchor="middle" fill="#2563EB" font-size="10" font-weight="700">SNAPSHOT</text>
+<text x="1112" y="697" text-anchor="middle" fill="#2563EB" font-size="10" font-weight="700">현재 상태</text>
 
 <path d="M 1450 586 V 700 H 1280 V 784" fill="none" stroke="#94A3B8" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow-soft)"/>
 <rect x="1460" y="680" width="58" height="24" rx="8" ry="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
-<text x="1489" y="697" text-anchor="middle" fill="#64748B" font-size="10" font-weight="700">READ</text>
+<text x="1489" y="697" text-anchor="middle" fill="#64748B" font-size="10" font-weight="700">조회</text>
 </svg>

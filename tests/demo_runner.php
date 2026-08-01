@@ -158,15 +158,15 @@ $report = [
     'generated_at_utc' => gmdate('c'),
     'environment' => [
         'runtime' => 'Docker Compose / PHP ' . PHP_VERSION,
-        'database' => 'SQL Server through PDO_SQLSRV',
-        'authentication' => 'local test credentials',
+        'database' => 'PDO_SQLSRV를 통한 SQL Server',
+        'authentication' => '로컬 테스트 자격 증명',
     ],
     'scenarios' => [],
     'summary' => ['passed' => false, 'count' => 0],
     'final_state' => [],
     'limitations' => [
-        'The Compose run checks the Classic ASP source and JSON contract. The optional Windows IIS endpoint is configured separately with scripts/setup-iis-classic-asp.ps1.',
-        'The scenarios cover correctness, not production load or capacity.',
+        'Compose 실행은 Classic ASP 소스와 JSON 계약을 확인합니다. 선택적 Windows IIS 엔드포인트는 scripts/setup-iis-classic-asp.ps1로 별도 구성합니다.',
+        '시나리오는 정확성을 검증하며 운영 부하나 처리 용량을 측정하지 않습니다.',
     ],
 ];
 $exitCode = 0;
@@ -186,26 +186,26 @@ try {
     $baseTime = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-2 minutes');
 
     $health = demoRequest('GET', '/health');
-    demoScenario($scenarios, 'Health', $health['status'] === 200 && ($health['json']['probe'] ?? null) === 1, $health['status'], ['method' => 'GET', 'path' => '/health'], $health['json']);
+    demoScenario($scenarios, '상태 확인', $health['status'] === 200 && ($health['json']['probe'] ?? null) === 1, $health['status'], ['method' => 'GET', 'path' => '/health'], $health['json']);
 
     $initial = demoPayload('demo-checkpoint', $learnerId, DEMO_LECTURE_ID, 'demo-session', 1, 100, $baseTime);
     $anonymous = demoRequest('POST', '/api/v1/learning-events', [], json_encode($initial, JSON_THROW_ON_ERROR));
-    demoScenario($scenarios, 'Authentication required', $anonymous['status'] === 401, $anonymous['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'authentication' => 'omitted'], $anonymous['json']);
+    demoScenario($scenarios, '인증 필수', $anonymous['status'] === 401, $anonymous['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'authentication' => '미포함'], $anonymous['json']);
 
     $unenrolled = demoLearnerRequest($config, demoPayload('demo-unenrolled', $learnerId, DEMO_UNENROLLED_LECTURE_ID, 'demo-none', 1, 1, $baseTime));
-    demoScenario($scenarios, 'Active enrollment required', $unenrolled['status'] === 403, $unenrolled['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'authentication' => 'learner bearer redacted'], $unenrolled['json']);
+    demoScenario($scenarios, '유효한 수강 등록 필수', $unenrolled['status'] === 403, $unenrolled['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'authentication' => '학습자 Bearer 값 제외'], $unenrolled['json']);
 
     $created = demoLearnerRequest($config, $initial);
     $createdSnapshot = demoSnapshot($connection, $learnerId);
-    demoScenario($scenarios, 'New checkpoint', $created['status'] === 200 && ($created['json']['applied'] ?? null) === true && (int) ($createdSnapshot['resume_position_seconds'] ?? -1) === 100, $created['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'body' => $initial], $created['json'], ['snapshot' => $createdSnapshot]);
+    demoScenario($scenarios, '신규 체크포인트', $created['status'] === 200 && ($created['json']['applied'] ?? null) === true && (int) ($createdSnapshot['resume_position_seconds'] ?? -1) === 100, $created['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'body' => $initial], $created['json'], ['snapshot' => $createdSnapshot]);
 
     $late = demoLearnerRequest($config, demoPayload('demo-late', $learnerId, DEMO_LECTURE_ID, 'demo-session', 0, 150, $baseTime->modify('-30 seconds')));
     $lateSnapshot = demoSnapshot($connection, $learnerId);
-    demoScenario($scenarios, 'Late checkpoint keeps resume and raises furthest', $late['status'] === 200 && (int) ($lateSnapshot['resume_position_seconds'] ?? -1) === 100 && (int) ($lateSnapshot['furthest_position_seconds'] ?? -1) === 150, $late['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $late['json'], ['snapshot' => $lateSnapshot]);
+    demoScenario($scenarios, '늦은 체크포인트는 이어보기를 유지하고 최대 위치를 높임', $late['status'] === 200 && (int) ($lateSnapshot['resume_position_seconds'] ?? -1) === 100 && (int) ($lateSnapshot['furthest_position_seconds'] ?? -1) === 150, $late['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $late['json'], ['snapshot' => $lateSnapshot]);
 
     $rewind = demoLearnerRequest($config, demoPayload('demo-rewind', $learnerId, DEMO_LECTURE_ID, 'demo-session', 2, 50, $baseTime->modify('+20 seconds')));
     $rewindSnapshot = demoSnapshot($connection, $learnerId);
-    demoScenario($scenarios, 'Latest rewind lowers resume and preserves furthest', $rewind['status'] === 200 && (int) ($rewindSnapshot['resume_position_seconds'] ?? -1) === 50 && (int) ($rewindSnapshot['furthest_position_seconds'] ?? -1) === 150, $rewind['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $rewind['json'], ['snapshot' => $rewindSnapshot]);
+    demoScenario($scenarios, '최신 되감기는 이어보기를 낮추고 최대 위치를 유지함', $rewind['status'] === 200 && (int) ($rewindSnapshot['resume_position_seconds'] ?? -1) === 50 && (int) ($rewindSnapshot['furthest_position_seconds'] ?? -1) === 150, $rewind['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $rewind['json'], ['snapshot' => $rewindSnapshot]);
 
     $duplicatePayload = demoPayload('demo-duplicate', $learnerId, DEMO_LECTURE_ID, 'demo-session', 3, 60, $baseTime->modify('+30 seconds'));
     demoLearnerRequest($config, $duplicatePayload);
@@ -220,46 +220,46 @@ try {
         'event_id' => 'demo-duplicate',
     ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
     $duplicate = demoLearnerRequest($config, $duplicatePayload, $duplicateRaw);
-    demoScenario($scenarios, 'Semantic duplicate', $duplicate['status'] === 200 && ($duplicate['json']['duplicate'] ?? null) === true, $duplicate['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'body' => 'field order changed; credentials redacted'], $duplicate['json']);
+    demoScenario($scenarios, '의미상 동일한 중복 요청', $duplicate['status'] === 200 && ($duplicate['json']['duplicate'] ?? null) === true, $duplicate['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events', 'body' => '필드 순서 변경, 자격 증명 제외'], $duplicate['json']);
 
     $conflictPayload = demoPayload('demo-conflict', $learnerId, DEMO_LECTURE_ID, 'demo-session', 4, 70, $baseTime->modify('+40 seconds'));
     demoLearnerRequest($config, $conflictPayload);
     $conflictChanged = $conflictPayload;
     $conflictChanged['position_seconds'] = 71;
     $conflict = demoLearnerRequest($config, $conflictChanged);
-    demoScenario($scenarios, 'Same event id with different payload', $conflict['status'] === 409, $conflict['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $conflict['json']);
+    demoScenario($scenarios, '같은 이벤트 ID의 다른 payload', $conflict['status'] === 409, $conflict['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $conflict['json']);
 
     $crossSource = demoPayload('demo-cross-source', $learnerId, DEMO_LECTURE_ID, 'demo-player', 1, 80, $baseTime->modify('+50 seconds'));
     $crossSourceLearner = demoLearnerRequest($config, $crossSource);
     $crossSourcePlayer = demoPlayerRequest($config, $crossSource);
     $crossSourceCount = (int) demoScalar($connection, 'SELECT COUNT(*) FROM dbo.learning_events WHERE event_id = ?', ['demo-cross-source']);
-    demoScenario($scenarios, 'Same event id from different sources', $crossSourceLearner['status'] === 200 && $crossSourcePlayer['status'] === 200 && $crossSourceCount === 2, $crossSourcePlayer['status'], ['method' => 'POST', 'path' => '/api/v1/player-events', 'authentication' => 'HMAC headers redacted'], $crossSourcePlayer['json'], ['event_count' => $crossSourceCount]);
+    demoScenario($scenarios, '서로 다른 source의 같은 이벤트 ID', $crossSourceLearner['status'] === 200 && $crossSourcePlayer['status'] === 200 && $crossSourceCount === 2, $crossSourcePlayer['status'], ['method' => 'POST', 'path' => '/api/v1/player-events', 'authentication' => 'HMAC 헤더 값 제외'], $crossSourcePlayer['json'], ['event_count' => $crossSourceCount]);
 
     $futureEventId = 'demo-future';
     $future = demoLearnerRequest($config, demoPayload($futureEventId, $learnerId, DEMO_LECTURE_ID, 'demo-future', 1, 1, (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('+6 minutes')));
     $futureCount = (int) demoScalar($connection, 'SELECT COUNT(*) FROM dbo.learning_events WHERE event_id = ?', [$futureEventId]);
-    demoScenario($scenarios, 'Future beyond five minutes leaves no event', $future['status'] === 422 && $futureCount === 0, $future['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $future['json'], ['event_count' => $futureCount]);
+    demoScenario($scenarios, '5분을 초과한 미래 이벤트는 저장하지 않음', $future['status'] === 422 && $futureCount === 0, $future['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $future['json'], ['event_count' => $futureCount]);
 
     $completed = demoLearnerRequest($config, demoPayload('demo-completed', $learnerId, DEMO_LECTURE_ID, 'demo-complete', 1, 160, $baseTime->modify('+60 seconds'), 'COMPLETED'));
     $completedSnapshot = demoSnapshot($connection, $learnerId);
     $afterCompleted = demoLearnerRequest($config, demoPayload('demo-after-completed', $learnerId, DEMO_LECTURE_ID, 'demo-complete', 2, 70, $baseTime->modify('+70 seconds')));
     $afterCompletedSnapshot = demoSnapshot($connection, $learnerId);
-    demoScenario($scenarios, 'completed_at is preserved', $completed['status'] === 200 && $afterCompleted['status'] === 200 && ($completedSnapshot['completed_at'] ?? null) !== null && ($completedSnapshot['completed_at'] ?? null) === ($afterCompletedSnapshot['completed_at'] ?? null), $afterCompleted['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $afterCompleted['json'], ['before' => $completedSnapshot, 'after' => $afterCompletedSnapshot]);
+    demoScenario($scenarios, '최초 completed_at 보존', $completed['status'] === 200 && $afterCompleted['status'] === 200 && ($completedSnapshot['completed_at'] ?? null) !== null && ($completedSnapshot['completed_at'] ?? null) === ($afterCompletedSnapshot['completed_at'] ?? null), $afterCompleted['status'], ['method' => 'POST', 'path' => '/api/v1/learning-events'], $afterCompleted['json'], ['before' => $completedSnapshot, 'after' => $afterCompletedSnapshot]);
 
     $guardianMismatch = demoRequest('GET', '/api/v1/guardians/' . ($guardianId + 1) . '/learners/' . $learnerId . '/progress', ['Authorization' => 'Bearer ' . $config->guardianBearerToken()]);
-    demoScenario($scenarios, 'Guardian path subject mismatch', $guardianMismatch['status'] === 403, $guardianMismatch['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{other}/learners/{seed}/progress', 'authentication' => 'guardian bearer redacted'], $guardianMismatch['json']);
+    demoScenario($scenarios, '보호자 경로 주체 불일치', $guardianMismatch['status'] === 403, $guardianMismatch['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{other}/learners/{seed}/progress', 'authentication' => '보호자 Bearer 값 제외'], $guardianMismatch['json']);
     $guardianUnlinked = demoRequest('GET', '/api/v1/guardians/' . $guardianId . '/learners/' . DEMO_UNLINKED_LEARNER_ID . '/progress', ['Authorization' => 'Bearer ' . $config->guardianBearerToken()]);
-    demoScenario($scenarios, 'Guardian link required', $guardianUnlinked['status'] === 403, $guardianUnlinked['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{seed}/learners/{unlinked}/progress', 'authentication' => 'guardian bearer redacted'], $guardianUnlinked['json']);
+    demoScenario($scenarios, '보호자 연결 필수', $guardianUnlinked['status'] === 403, $guardianUnlinked['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{seed}/learners/{unlinked}/progress', 'authentication' => '보호자 Bearer 값 제외'], $guardianUnlinked['json']);
     $guardian = demoRequest('GET', '/api/v1/guardians/' . $guardianId . '/learners/' . $learnerId . '/progress', ['Authorization' => 'Bearer ' . $config->guardianBearerToken()]);
-    demoScenario($scenarios, 'Guardian linked progress read', $guardian['status'] === 200, $guardian['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{seed}/learners/{seed}/progress', 'authentication' => 'guardian bearer redacted'], $guardian['json']);
+    demoScenario($scenarios, '연결된 보호자의 진행 상태 조회', $guardian['status'] === 200, $guardian['status'], ['method' => 'GET', 'path' => '/api/v1/guardians/{seed}/learners/{seed}/progress', 'authentication' => '보호자 Bearer 값 제외'], $guardian['json']);
 
     $classicAsp = demoProcess([PHP_BINARY, __DIR__ . '/contract.php']);
-    demoScenario($scenarios, 'Classic ASP contract', $classicAsp['exit_code'] === 0, $classicAsp['exit_code'] === 0 ? 200 : 500, ['command' => 'php tests/contract.php', 'target' => 'legacy/progress.asp'], trim($classicAsp['stdout']));
+    demoScenario($scenarios, 'Classic ASP 계약', $classicAsp['exit_code'] === 0, $classicAsp['exit_code'] === 0 ? 200 : 500, ['command' => 'php tests/contract.php', 'target' => 'legacy/progress.asp'], trim($classicAsp['stdout']));
 
     $concurrency = demoProcess([PHP_BINARY, __DIR__ . '/concurrency.php', '--json']);
     $concurrencyResult = json_decode(trim($concurrency['stdout']), true);
     $concurrencyPassed = $concurrency['exit_code'] === 0 && is_array($concurrencyResult) && ($concurrencyResult['passed'] ?? false) === true && in_array('T01', $concurrencyResult['scenarios'] ?? [], true);
-    demoScenario($scenarios, 'Concurrent first insert and MSSQL atomicity', $concurrencyPassed, $concurrencyPassed ? 200 : 500, ['method' => 'parallel HTTP test', 'path' => 'tests/concurrency.php'], is_array($concurrencyResult) ? $concurrencyResult : 'No concurrency report');
+    demoScenario($scenarios, '동시 최초 INSERT와 MSSQL 원자성', $concurrencyPassed, $concurrencyPassed ? 200 : 500, ['method' => '병렬 HTTP 테스트', 'path' => 'tests/concurrency.php'], is_array($concurrencyResult) ? $concurrencyResult : '동시성 보고서 없음');
 
     $finalSnapshot = demoSnapshot($connection, $learnerId);
     $finalEventCount = (int) demoScalar($connection, 'SELECT COUNT(*) FROM dbo.learning_events WHERE learner_id = ? AND lecture_id = ?', [$learnerId, DEMO_LECTURE_ID]);

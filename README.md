@@ -46,7 +46,7 @@ Classic ASP 어댑터는 PHP 쓰기 경로와 분리된 읽기 전용 경계로 
 
 ## API
 
-| Method | Endpoint | 인증 | 설명 |
+| 메서드 | 엔드포인트 | 인증 | 설명 |
 | --- | --- | --- | --- |
 | `GET` | `/health` | 없음 | API와 데이터베이스 상태 확인 |
 | `POST` | `/api/v1/learning-events` | Bearer | 학습자와 `source`를 확인한 뒤 이벤트 수집 |

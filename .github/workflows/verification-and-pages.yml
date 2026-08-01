@@ -1,0 +1,94 @@
+name: 검증과 문서 배포
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: verification-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: 실제 MSSQL 검증
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: 저장소 받기
+        uses: actions/checkout@v6
+
+      - name: 로컬 실행 설정 준비
+        run: cp .env.example .env
+
+      - name: 데모 실행
+        shell: pwsh
+        run: ./demo.ps1
+
+      - name: PHP와 Composer 검증
+        run: |
+          docker compose exec -T app sh -lc 'find src public scripts tests -type f -name "*.php" -print0 | xargs -0 -n1 php -l'
+          docker compose exec -T app composer validate --no-check-publish
+          docker compose exec -T app composer check-platform-reqs
+          docker compose exec -T app composer test
+          docker compose exec -T app composer audit
+
+      - name: 데모 보고서 검증
+        shell: pwsh
+        run: |
+          $bytes = [System.IO.File]::ReadAllBytes('demo-result.html')
+          if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xef -and $bytes[1] -eq 0xbb -and $bytes[2] -eq 0xbf) { throw 'demo-result.html에 BOM이 있습니다.' }
+          $html = [System.Text.UTF8Encoding]::new($false, $true).GetString($bytes)
+          if ($html.Contains("`r") -or $html.Contains([char]0xfffd)) { throw 'demo-result.html은 UTF-8, LF 줄바꿈이어야 합니다.' }
+          if ([regex]::Matches($html, "<tr class='PASS'>").Count -ne 16 -or $html.Contains("<tr class='FAIL'>")) { throw '데모 시나리오 16개가 모두 통과하지 않았습니다.' }
+          $values = @{}
+          foreach ($line in Get-Content .env) {
+            if ($line -match '^(?<key>[A-Z0-9_]+)=(?<value>.*)$') { $values[$Matches.key] = $Matches.value }
+          }
+          foreach ($key in 'MSSQL_SA_PASSWORD', 'APP_BEARER_TOKEN', 'GUARDIAN_BEARER_TOKEN', 'PLAYER_HMAC_SECRET') {
+            if ($values[$key] -and $html.Contains($values[$key])) { throw "demo-result.html에 $key 값이 포함됐습니다." }
+          }
+
+      - name: Pages 파일 준비
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          mkdir -p _site/docs _site/swagger-ui
+          cp docs/site/index.html _site/index.html
+          cp public/swagger-ui/index.html _site/docs/index.html
+          cp -R public/swagger-ui/. _site/swagger-ui/
+          cp openapi.yaml demo-result.html _site/
+          touch _site/.nojekyll
+
+      - name: Pages 설정
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Pages 산출물 올리기
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: 컨테이너 정리
+        if: always()
+        run: docker compose down -v
+
+  deploy:
+    name: GitHub Pages 배포
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Pages 배포
+        id: deployment
+        uses: actions/deploy-pages@v4

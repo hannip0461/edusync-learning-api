@@ -128,7 +128,7 @@ try {
 
     $docs = requestIntegration('GET', '/docs');
     assertIntegrationSame(200, $docs['status'], 'Swagger UI document must be served');
-    assertIntegrationTrue(str_contains($docs['body'], "url: '/openapi.yaml'"), 'Swagger UI must load the single OpenAPI route');
+    assertIntegrationTrue(str_contains($docs['body'], "url: '../openapi.yaml'"), 'Swagger UI must load the single OpenAPI route');
     $docsSlash = requestIntegration('GET', '/docs/');
     assertIntegrationSame(200, $docsSlash['status'], 'Swagger UI document with a trailing slash must be served');
     assertIntegrationSame($docs['body'], $docsSlash['body'], 'Swagger UI routes must serve the same document');

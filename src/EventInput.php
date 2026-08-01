@@ -26,7 +26,6 @@ final class EventInput
         public readonly string $eventType,
         public readonly int $positionSeconds,
         public readonly \DateTimeImmutable $occurredAt,
-        public readonly string $occurredAtUtc,
         public readonly string $payloadHash,
     ) {
     }
@@ -86,7 +85,6 @@ final class EventInput
             $payload['event_type'],
             $positionSeconds,
             $occurredAt->setTimezone(new \DateTimeZone('UTC')),
-            $occurredAtUtc,
             hash('sha256', $canonical),
         );
     }

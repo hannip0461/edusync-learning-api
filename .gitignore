@@ -3,3 +3,6 @@
 !.env.example
 /vendor/
 .DS_Store
+
+# demo.ps1 실행 결과
+/demo-result.html

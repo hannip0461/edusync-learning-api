@@ -63,7 +63,7 @@ final class Config
             $required('DB_USERNAME'),
             $required('DB_PASSWORD'),
             self::toBoolean($environment['DB_ENCRYPT'] ?? 'true'),
-            self::toBoolean($environment['DB_TRUST_SERVER_CERTIFICATE'] ?? 'true'),
+            self::toBoolean($environment['DB_TRUST_SERVER_CERTIFICATE'] ?? 'false'),
             self::token($required('APP_BEARER_TOKEN'), 'APP_BEARER_TOKEN'),
             self::positiveInteger($required('APP_BEARER_LEARNER_ID'), 'APP_BEARER_LEARNER_ID'),
             self::source($required('APP_EVENT_SOURCE'), 'APP_EVENT_SOURCE'),

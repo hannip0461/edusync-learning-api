@@ -9,6 +9,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 const TEST_GUARDIAN_ID = 1001;
 const TEST_LEARNER_ID = 2001;
+// Bearer 주체나 보호자 연결에 포함되지 않은 수강 학습자
 const TEST_UNLINKED_LEARNER_ID = 900000003;
 const TEST_COURSE_ID = 900000004;
 const TEST_LECTURE_ID = 900000005;
@@ -135,9 +136,9 @@ try {
     assertIntegrationSame(200, requestIntegration('GET', '/swagger-ui/swagger-ui-bundle.js')['status'], 'Swagger UI bundle asset must be served');
     assertIntegrationSame(200, requestIntegration('GET', '/openapi.yaml')['status'], 'OpenAPI document must be served');
 
-    executeIntegration($connection, 'DELETE FROM dbo.lecture_progress WHERE learner_id = ? AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
-    executeIntegration($connection, 'DELETE FROM dbo.learning_events WHERE learner_id = ? AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
-    executeIntegration($connection, 'DELETE FROM dbo.enrollments WHERE learner_id = ? AND course_id IN (?, ?)', [TEST_LEARNER_ID, TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
+    executeIntegration($connection, 'DELETE FROM dbo.lecture_progress WHERE learner_id IN (?, ?) AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_UNLINKED_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
+    executeIntegration($connection, 'DELETE FROM dbo.learning_events WHERE learner_id IN (?, ?) AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_UNLINKED_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
+    executeIntegration($connection, 'DELETE FROM dbo.enrollments WHERE learner_id IN (?, ?) AND course_id IN (?, ?)', [TEST_LEARNER_ID, TEST_UNLINKED_LEARNER_ID, TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
     executeIntegration($connection, 'DELETE FROM dbo.lectures WHERE lecture_id IN (?, ?)', [TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
     executeIntegration($connection, 'DELETE FROM dbo.courses WHERE course_id IN (?, ?)', [TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
     executeIntegration($connection, 'DELETE FROM dbo.learners WHERE learner_id = ?', [TEST_UNLINKED_LEARNER_ID]);
@@ -145,7 +146,7 @@ try {
     executeIntegration($connection, 'INSERT INTO dbo.learners (learner_id, display_name) VALUES (?, N\'Unlinked Learner\')', [TEST_UNLINKED_LEARNER_ID]);
     executeIntegration($connection, 'INSERT INTO dbo.courses (course_id, title, is_active) VALUES (?, N\'Integration Course\', 1), (?, N\'Unenrolled Course\', 1)', [TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
     executeIntegration($connection, 'INSERT INTO dbo.lectures (lecture_id, course_id, title, lecture_order, duration_seconds, is_active) VALUES (?, ?, N\'Integration Lecture\', 1, 600, 1), (?, ?, N\'Unenrolled Lecture\', 1, 600, 1)', [TEST_LECTURE_ID, TEST_COURSE_ID, TEST_UNENROLLED_LECTURE_ID, TEST_UNENROLLED_COURSE_ID]);
-    executeIntegration($connection, 'INSERT INTO dbo.enrollments (learner_id, course_id, enrollment_status, starts_at, ends_at) VALUES (?, ?, N\'ACTIVE\', DATEADD(day, -1, SYSUTCDATETIME()), DATEADD(day, 1, SYSUTCDATETIME()))', [TEST_LEARNER_ID, TEST_COURSE_ID]);
+    executeIntegration($connection, 'INSERT INTO dbo.enrollments (learner_id, course_id, enrollment_status, starts_at, ends_at) VALUES (?, ?, N\'ACTIVE\', DATEADD(day, -1, SYSUTCDATETIME()), DATEADD(day, 1, SYSUTCDATETIME())), (?, ?, N\'ACTIVE\', DATEADD(day, -1, SYSUTCDATETIME()), DATEADD(day, 1, SYSUTCDATETIME()))', [TEST_LEARNER_ID, TEST_COURSE_ID, TEST_UNLINKED_LEARNER_ID, TEST_COURSE_ID]);
 
     $baseTime = (new DateTimeImmutable('now', new DateTimeZone('UTC')))->modify('-2 minutes');
     $occurred = $baseTime->format('Y-m-d\\TH:i:s.v\\Z');
@@ -249,6 +250,40 @@ try {
     $afterFailures = (int) $connection->query("SELECT COUNT(*) FROM dbo.learning_events WHERE event_id IN ('player-bad-signature', 'player-stale')")->fetchColumn();
     assertIntegrationSame($beforeFailures, $afterFailures, 'Failed HMAC requests must not modify the database');
 
+    // Bearer는 학습자 한 명에, HMAC은 신뢰된 발행자에 결속된다(DECISIONS D10).
+    $foreignEvent = eventPayload('foreign-learner-write', TEST_UNLINKED_LEARNER_ID, TEST_LECTURE_ID, 'session-foreign', 1, 60, $occurred);
+    $foreignCount = $connection->prepare('SELECT COUNT(*) FROM dbo.learning_events WHERE event_id = ?');
+    assertIntegrationSame(403, learnerRequest($config, $foreignEvent)['status'], 'Bearer path must refuse a learner_id other than its bound subject');
+    $foreignCount->execute(['foreign-learner-write']);
+    assertIntegrationSame(0, (int) $foreignCount->fetchColumn(), 'Refused bearer write must not store an event');
+    assertIntegrationSame(200, playerRequest($config, $foreignEvent)['status'], 'HMAC publisher path must accept an enrolled learner it does not own');
+    $foreignCount->execute(['foreign-learner-write']);
+    assertIntegrationSame(1, (int) $foreignCount->fetchColumn(), 'Accepted HMAC publisher write must store exactly one event');
+    assertIntegrationSame(404, playerRequest($config, eventPayload('foreign-missing-learner', 900000097, TEST_LECTURE_ID, 'session-foreign', 2, 60, $occurred))['status'], 'HMAC publisher path must still require an existing learner');
+    assertIntegrationSame(403, playerRequest($config, eventPayload('foreign-unenrolled-course', TEST_UNLINKED_LEARNER_ID, TEST_UNENROLLED_LECTURE_ID, 'session-foreign', 3, 60, $occurred))['status'], 'HMAC publisher path must still require an active enrollment');
+
+    // HMAC 재전송은 유니크 제약에서 멱등 처리된다(DECISIONS D11).
+    $replayEvent = eventPayload('hmac-replay', TEST_LEARNER_ID, TEST_LECTURE_ID, 'session-replay', 9, 140, $occurred);
+    $replayTimestamp = (string) time();
+    $replaySignature = 'sha256=' . hash_hmac(
+        'sha256',
+        $replayTimestamp . "\n" . json_encode($replayEvent, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
+        $config->playerHmacSecret(),
+    );
+    $firstSend = playerRequest($config, $replayEvent, $replaySignature, $replayTimestamp);
+    assertIntegrationSame(200, $firstSend['status'], 'First signed player request must be accepted');
+    assertIntegrationSame(['applied' => true, 'duplicate' => false], $firstSend['json'], 'First signed player request must apply the event');
+    $snapshot->execute([TEST_LEARNER_ID, TEST_LECTURE_ID]);
+    $beforeReplay = snapshotValues($snapshot);
+    $replaySend = playerRequest($config, $replayEvent, $replaySignature, $replayTimestamp);
+    assertIntegrationSame(200, $replaySend['status'], 'Replayed signature must still pass the HMAC layer: there is no nonce store');
+    assertIntegrationSame(['applied' => false, 'duplicate' => true], $replaySend['json'], 'Replay must be absorbed as a duplicate by the unique constraint');
+    $replayCount = $connection->prepare('SELECT COUNT(*) FROM dbo.learning_events WHERE source = ? AND event_id = ?');
+    $replayCount->execute([$config->playerEventSource(), 'hmac-replay']);
+    assertIntegrationSame(1, (int) $replayCount->fetchColumn(), 'Replay must not store a second event row');
+    $snapshot->execute([TEST_LEARNER_ID, TEST_LECTURE_ID]);
+    assertIntegrationSame($beforeReplay, snapshotValues($snapshot), 'Replay must not change the progress snapshot');
+
     assertIntegrationSame(403, requestIntegration('GET', '/api/v1/guardians/' . (TEST_GUARDIAN_ID + 1) . '/learners/' . TEST_LEARNER_ID . '/progress', ['Authorization' => 'Bearer ' . $config->guardianBearerToken()])['status'], 'Guardian path subject mismatch must return 403');
     assertIntegrationSame(403, requestIntegration('GET', '/api/v1/guardians/' . TEST_GUARDIAN_ID . '/learners/' . TEST_UNLINKED_LEARNER_ID . '/progress', ['Authorization' => 'Bearer ' . $config->guardianBearerToken()])['status'], 'Missing guardian link must return 403');
     $guardianSuccess = requestIntegration('GET', '/api/v1/guardians/' . TEST_GUARDIAN_ID . '/learners/' . TEST_LEARNER_ID . '/progress', ['Authorization' => 'Bearer ' . $config->guardianBearerToken()]);
@@ -264,9 +299,9 @@ try {
 } finally {
     if (isset($connection) && $connection instanceof PDO) {
         try {
-            executeIntegration($connection, 'DELETE FROM dbo.lecture_progress WHERE learner_id = ? AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
-            executeIntegration($connection, 'DELETE FROM dbo.learning_events WHERE learner_id = ? AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
-            executeIntegration($connection, 'DELETE FROM dbo.enrollments WHERE learner_id = ? AND course_id IN (?, ?)', [TEST_LEARNER_ID, TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
+            executeIntegration($connection, 'DELETE FROM dbo.lecture_progress WHERE learner_id IN (?, ?) AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_UNLINKED_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
+            executeIntegration($connection, 'DELETE FROM dbo.learning_events WHERE learner_id IN (?, ?) AND lecture_id IN (?, ?)', [TEST_LEARNER_ID, TEST_UNLINKED_LEARNER_ID, TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
+            executeIntegration($connection, 'DELETE FROM dbo.enrollments WHERE learner_id IN (?, ?) AND course_id IN (?, ?)', [TEST_LEARNER_ID, TEST_UNLINKED_LEARNER_ID, TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
             executeIntegration($connection, 'DELETE FROM dbo.lectures WHERE lecture_id IN (?, ?)', [TEST_LECTURE_ID, TEST_UNENROLLED_LECTURE_ID]);
             executeIntegration($connection, 'DELETE FROM dbo.courses WHERE course_id IN (?, ?)', [TEST_COURSE_ID, TEST_UNENROLLED_COURSE_ID]);
             executeIntegration($connection, 'DELETE FROM dbo.learners WHERE learner_id = ?', [TEST_UNLINKED_LEARNER_ID]);

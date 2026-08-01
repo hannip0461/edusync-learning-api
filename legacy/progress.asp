@@ -10,6 +10,16 @@ Response.CodePage = 65001
 Response.Charset = "utf-8"
 Response.ContentType = "application/json"
 
+' 사용자 인증이 없으므로 루프백 호출만 허용한다(DECISIONS D6).
+' REMOTE_ADDR가 없을 때도 거부되도록 빈 문자열로 정규화한다.
+Dim remoteAddress
+remoteAddress = "" & Request.ServerVariables("REMOTE_ADDR")
+If Left(remoteAddress, 4) <> "127." And remoteAddress <> "::1" Then
+    Response.Status = "403 Forbidden"
+    Response.Write "{""error"":""this adapter accepts loopback clients only""}"
+    Response.End
+End If
+
 Dim learnerId, lectureId
 learnerId = Request.QueryString("learner_id")
 lectureId = Request.QueryString("lecture_id")

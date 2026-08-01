@@ -65,8 +65,22 @@ paths:
   /api/v1/player-events:
     post:
       operationId: receivePlayerEvent
-      summary: Receive a server-to-server player callback
+      summary: Receive a server-to-server player callback from a trusted publisher
       description: |
+        **This path does not verify `learner_id` ownership.** The HMAC credential
+        identifies one publisher, not one learner, so a holder of
+        `PLAYER_HMAC_SECRET` may write events for any `learner_id`. That is
+        deliberate: the player is a server-to-server publisher acting on behalf of
+        many learners. Authorization is therefore weaker here than on
+        `/api/v1/learning-events`, where the bearer token is bound to a single
+        learner subject and a mismatched `learner_id` returns 403. Distribute
+        `PLAYER_HMAC_SECRET` only inside the trust boundary.
+
+        The path is not unauthorized. The learner and lecture must exist (404
+        otherwise), an `ACTIVE` enrollment must cover the lecture's course (403
+        otherwise), and `occurred_at` must fall inside the enrollment window (422
+        otherwise). Only learner ownership is unchecked.
+
         The server normalizes `source` from the HMAC publisher; clients cannot
         supply it. The canonical HMAC-SHA256 input is
         `X-Player-Timestamp + "\n" + raw HTTP request body`. The timestamp uses
@@ -75,6 +89,13 @@ paths:
         `X-Player-Signature: sha256=<64 lowercase hexadecimal HMAC digest>` and
         a Unix-seconds timestamp without leading zeroes (except `0`). Its
         absolute skew must not exceed `HMAC_TOLERANCE_SECONDS` (300 by default).
+
+        There is no nonce store, so a signature remains replayable for that whole
+        window and a replay returns 200. It cannot change state: an identical body
+        carries an identical `event_id`, the unique constraint on
+        `(source, event_id)` rejects the second insert, and the response is
+        `{"applied": false, "duplicate": true}`. This is a recorded decision, not an
+        oversight; see DECISIONS D11 for the condition under which it stops holding.
       security:
         - playerHmac: []
       parameters:
@@ -125,7 +146,14 @@ paths:
     get:
       operationId: getClassicAspProgress
       summary: Read progress through the Classic ASP adapter
-      description: Optional Windows IIS endpoint backed by a read-only SQL Server login.
+      description: |
+        Optional Windows IIS endpoint backed by a read-only SQL Server login. There is
+        no user authentication (DECISIONS D6); the boundary is the caller's network
+        address. The ASP source itself refuses any peer that is not `127.0.0.0/8` or
+        `::1` with 403, before reading the query string or opening a connection, so the
+        restriction does not depend on the IIS binding created by the setup script. Do
+        not place this adapter behind a reverse proxy: the proxy would become the peer
+        and every forwarded request would pass.
       servers:
         - url: http://127.0.0.1:8091
       security: []
@@ -146,6 +174,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/ClassicAspProgress'
         '400': { $ref: '#/components/responses/BadRequest' }
+        '403':
+          description: The caller is not a loopback peer.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error]
+                properties:
+                  error: { type: string }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
   /docs:
@@ -170,7 +207,10 @@ components:
       type: apiKey
       in: header
       name: X-Player-Signature
-      description: '`sha256=<64 lowercase hex>` of `X-Player-Timestamp + "\n" + raw HTTP request body` using PLAYER_HMAC_SECRET.'
+      description: >-
+        `sha256=<64 lowercase hex>` of `X-Player-Timestamp + "\n" + raw HTTP request body`
+        using PLAYER_HMAC_SECRET. Identifies one trusted publisher, not one learner:
+        this credential authorizes writes for any `learner_id`.
   parameters:
     PlayerTimestamp:
       name: X-Player-Timestamp

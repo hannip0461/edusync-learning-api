@@ -2,14 +2,14 @@
 
 [![검증과 문서 배포](https://github.com/hannip0461/edusync-learning-api/actions/workflows/verification-and-pages.yml/badge.svg)](https://github.com/hannip0461/edusync-learning-api/actions/workflows/verification-and-pages.yml)
 
-웹·모바일 플레이어의 학습 이벤트를 수집하고 강의별 진행 상태를 관리하는 API다. PHP 8.3, Slim 4, SQL Server 2022를 사용하며 멱등 처리, 늦게 도착한 이벤트, 동시 쓰기, 보호자 권한 조회를 다룬다. 기존 IIS 환경과 연동할 수 있도록 읽기 전용 Classic ASP 어댑터도 제공한다.
+웹과 모바일 플레이어의 학습 이벤트를 수집하고 강의별 진행 상태를 관리하는 API다. PHP 8.3, Slim 4, SQL Server 2022를 사용하며 멱등 처리, 늦게 도착한 이벤트, 동시 쓰기, 보호자 권한 조회를 다룬다. 기존 IIS 환경과 연동할 수 있도록 읽기 전용 Classic ASP 어댑터도 제공한다.
 
 ## 프로젝트 개요
 
 | 항목 | 내용 |
 | --- | --- |
 | 프로젝트명 | EduSync Learning API |
-| 개발 기간 | 2026-07-24 ~ 2026-07-26 |
+| 개발 기간 | 2026-07-20 ~ 2026-07-26 |
 | 주요 기술 | PHP 8.3, Slim 4, SQL Server 2022, Docker Compose |
 | API 문서 | OpenAPI 3.0, Swagger UI |
 | 호환 환경 | Windows IIS 10, Classic ASP |
@@ -21,9 +21,9 @@
 - HMAC-SHA256 서명을 사용하는 플레이어 콜백 수신
 - `(source, event_id)` 기준 멱등 처리와 충돌 감지
 - 재생 위치, 최대 시청 위치, 최초 완료 시각의 독립적인 갱신
-- 보호자·학습자 연결 관계를 확인하는 진행 조회
+- 보호자와 학습자 연결 관계를 확인하는 진행 조회
 - SQL Server 잠금과 트랜잭션 재시도를 적용한 동시성 제어
-- 내장 Swagger UI와 재실행 가능한 통합·동시성 테스트
+- 내장 Swagger UI와 재실행 가능한 통합 및 동시성 테스트
 
 ## 기술 스택
 
@@ -96,7 +96,7 @@ legacy/             IIS Classic ASP 읽기 어댑터
 tests/              계약, 통합, 동시성 테스트
 scripts/            마이그레이션과 IIS 구성 스크립트
 openapi.yaml        API 계약
-docker-compose.yml  로컬 API·SQL Server 실행 구성
+docker-compose.yml  로컬 API와 SQL Server 실행 구성
 ```
 
 ## 로컬 실행
@@ -123,9 +123,9 @@ docker compose exec -T app composer test
 docker compose exec -T app composer audit
 ```
 
-`composer test`는 Classic ASP 소스·JSON 계약, HTTP+SQL Server 통합 테스트, DB 배리어 기반 동시성 테스트를 순서대로 실행한다. 테스트 데이터와 전용 테이블·트리거는 고유 식별자를 사용하고 `finally` 블록에서 제거한다.
+`composer test`는 Classic ASP 소스와 JSON 계약, HTTP+SQL Server 통합 테스트, DB 배리어 기반 동시성 테스트를 순서대로 실행한다. 테스트 데이터와 전용 테이블 및 트리거는 고유 식별자를 사용하고 `finally` 블록에서 제거한다.
 
-동시성 시나리오는 최초 상태 생성 경쟁, 다중 체크포인트, 동일·상충 `payload`, 상태 갱신 실패 시 롤백, 실제 SQL Server 교착 상태와 재시도를 포함한다.
+동시성 시나리오는 최초 상태 생성 경쟁, 다중 체크포인트, 동일 또는 상충하는 `payload`, 상태 갱신 실패 시 롤백, 실제 SQL Server 교착 상태와 재시도를 포함한다.
 
 Pull Request와 `main` 갱신 시 GitHub Actions가 같은 Docker Compose 환경에서 위 검증과 데모를 실행한다. `main` 검증이 통과하면 단일 `openapi.yaml`, 로컬 Swagger UI 자산, 새 데모 결과를 [GitHub Pages](https://hannip0461.github.io/edusync-learning-api/)에 게시한다.
 
@@ -136,7 +136,7 @@ Pull Request와 `main` 갱신 시 GitHub Actions가 같은 Docker Compose 환경
 Start-Process .\demo-result.html
 ```
 
-스크립트는 Docker Compose, HTTP API, SQL Server의 결과를 모아 `demo-result.html`을 생성한다. 보고서에는 비밀값과 HMAC 서명을 제외한 요청·응답, 현재 상태, 동시성 결과, Classic ASP 계약과 제한사항이 기록된다.
+스크립트는 Docker Compose, HTTP API, SQL Server의 결과를 모아 `demo-result.html`을 생성한다. 보고서에는 비밀값과 HMAC 서명을 제외한 요청과 응답, 현재 상태, 동시성 결과, Classic ASP 계약과 제한사항이 기록된다.
 
 ## Windows IIS와 Classic ASP
 
@@ -157,13 +157,13 @@ Windows IIS 10과 Microsoft OLE DB Driver 19 환경에서 정상 조회 200, 잘
 
 ## 문서
 
-- [ARCHITECTURE.md](ARCHITECTURE.md): 컴포넌트 책임과 읽기·쓰기 경계
+- [ARCHITECTURE.md](ARCHITECTURE.md): 컴포넌트 책임과 읽기 및 쓰기 경계
 - [DECISIONS.md](DECISIONS.md): 주요 설계 결정과 절충 사항
 - [MYSQL_PORTABILITY.md](MYSQL_PORTABILITY.md): MySQL 이식 시 달라지는 동작
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): 해결한 장애와 재발 방지 기록
 - [DEPLOYMENT.md](DEPLOYMENT.md): 배포와 되돌리기 점검표
 
-검증 범위는 Docker Compose의 PHP API와 SQL Server, 실제 MSSQL 통합·동시성 경로, Windows IIS의 Classic ASP 읽기 경로를 포함한다. MySQL 전환 기준은 이식 문서에, 환경별 자격 증명과 신뢰 경계는 설정 예제와 설계 결정 문서에 정리했다.
+검증 범위는 Docker Compose의 PHP API와 SQL Server, 실제 MSSQL 통합 및 동시성 경로, Windows IIS의 Classic ASP 읽기 경로를 포함한다. MySQL 전환 기준은 이식 문서에, 환경별 자격 증명과 신뢰 경계는 설정 예제와 설계 결정 문서에 정리했다.
 
 ## 라이선스
 
